@@ -4,6 +4,7 @@ import ExtendHMMDashboard from './ExtendHMMDashboard';
 import Extend2HMMDashboard from './Extend2HMMDashboard';
 import HMMVisualizer from './320HMMDashboard';
 import HMMVisualizer2 from './327HMMDashboard';
+import Entropy410 from './410Entropy';
 
 function App() {
   return (
@@ -13,6 +14,7 @@ function App() {
       <Extend2HMMDashboard />
       <HMMVisualizer />
       <HMMVisualizer2 />
+      <Entropy410 />
     </div>
   );
 }

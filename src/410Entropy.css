@@ -1,0 +1,148 @@
+.visualization-container {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+  
+  .visualization-title {
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+  }
+  
+  .config-section {
+    margin-bottom: 1.5rem;
+  }
+  
+  .config-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+  }
+  
+  .config-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  @media (min-width: 768px) {
+    .config-grid {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+  
+  .config-item {
+    margin-bottom: 0.5rem;
+  }
+  
+  .config-label {
+    display: block;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+  }
+  
+  .config-select {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.25rem;
+  }
+  
+  .current-config {
+    margin-bottom: 1.5rem;
+  }
+  
+  .config-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .config-badge {
+    background-color: #f3f4f6;
+    padding: 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.875rem;
+  }
+  
+  .badge-label {
+    font-weight: 500;
+  }
+  
+  .metrics-section {
+    margin-bottom: 1rem;
+  }
+  
+  .metrics-buttons {
+    display: flex;
+    gap: 1rem;
+  }
+  
+  .metric-button {
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.25rem;
+    border: none;
+  }
+  
+  .metric-button-selected {
+    background-color: #3b82f6;
+    color: white;
+  }
+  
+  .metric-button-unselected {
+    background-color: #e5e7eb;
+  }
+  
+  .models-section {
+    margin-bottom: 1.5rem;
+  }
+  
+  .model-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+  
+  .model-button {
+    padding: 0.25rem 0.75rem;
+    border-radius: 0.25rem;
+    border: 1px solid;
+  }
+  
+  .model-button-selected {
+    background-color: #3b82f6;
+    color: white;
+  }
+  
+  .chart-container {
+    height: 24rem;
+    width: 100%;
+  }
+  
+  .notes-section {
+    margin-top: 1.5rem;
+    font-size: 0.875rem;
+    color: #6b7280;
+  }
+  
+  .notes-list {
+    margin-left: 1.25rem;
+    list-style-type: disc;
+  }
+  
+  .loading-message, .no-data-message {
+    padding: 1.5rem;
+    text-align: center;
+  }
+  
+  .no-data-title {
+    font-size: 1.25rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+  }
