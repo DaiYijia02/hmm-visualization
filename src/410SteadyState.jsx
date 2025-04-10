@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import Papa from 'papaparse';
-import './410Entropy.css';
+import './410SteadyState.css';
 
-const Entropy410 = () => {
+const SteadyState410 = () => {
   // Configuration state
   const [numState, setNumState] = useState(4);
   const [numObservation, setNumObservation] = useState(4);
@@ -96,7 +96,7 @@ const Entropy410 = () => {
         setLoading(true);
         
         // Use fetch instead of window.fs.readFile
-        const response = await fetch(`./data/Qwen2.5-1.5B_11111_1024_entropy_1024.csv`);
+        const response = await fetch(`./data/Qwen2.5-1.5B_11111_1024_steady_state_1024.csv`);
         const fileContent = await response.text();
         
         const parsedData = Papa.parse(fileContent, {
@@ -460,4 +460,4 @@ const Entropy410 = () => {
   );
 };
 
-export default Entropy410;
+export default SteadyState410;
