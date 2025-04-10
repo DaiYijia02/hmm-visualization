@@ -118,7 +118,7 @@ function getEntropyCategory(entropy) {
 // Helper function to fetch CSV data from local files
 async function fetchCSVFile(filename) {
   try {
-    const response = await fetch(`/data/${filename}`);
+    const response = await fetch(`./data/${filename}`);
     if (!response.ok) {
       throw new Error(`Failed to fetch ${filename}: ${response.status} ${response.statusText}`);
     }

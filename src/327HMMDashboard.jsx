@@ -131,7 +131,7 @@ const EnhancedHMMVisualizer = () => {
         const matrixPropertiesMap = {};
         
         try {
-          const matrixResponse = await fetch('/data/327matrix.csv');
+          const matrixResponse = await fetch('./data/327matrix.csv');
           if (!matrixResponse.ok) {
             console.warn("Matrix properties file not available:", matrixResponse.status);
           } else {
