@@ -344,7 +344,7 @@ const SteadyState410 = () => {
     );
   }
   
-  const chartTitle = `A Entropy Varying`;
+  const chartTitle = `A Steady State Varying`;
   
   return (
     <div className="visualization-container">

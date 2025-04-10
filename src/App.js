@@ -16,7 +16,7 @@ function App() {
       <HMMVisualizer />
       <HMMVisualizer2 />
       <Entropy410 />
-      <SteadyState410 />
+      {/* <SteadyState410 /> */}
     </div>
   );
 }
