@@ -1,0 +1,126 @@
+.container {
+    padding: 1rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+  
+  .title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 1rem;
+  }
+  
+  .filter-section {
+    margin-bottom: 1.5rem;
+    display: grid;
+    grid-template-columns: repeat(1, 1fr);
+    gap: 1rem;
+  }
+  
+  @media (min-width: 768px) {
+    .filter-section {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .filter-section {
+      grid-template-columns: repeat(5, 1fr);
+    }
+  }
+  
+  .form-group {
+    margin-bottom: 1rem;
+  }
+  
+  .form-label {
+    display: block;
+    font-size: 0.875rem;
+    font-weight: 500;
+    margin-bottom: 0.25rem;
+  }
+  
+  .form-select, .form-input {
+    width: 100%;
+    padding: 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 0.25rem;
+  }
+  
+  .form-radio, .form-checkbox {
+    margin-right: 0.25rem;
+  }
+  
+  .radio-group {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  
+  .radio-item, .checkbox-item {
+    display: inline-flex;
+    align-items: center;
+    margin-right: 1rem;
+  }
+  
+  .checkbox-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+  }
+  
+  @media (min-width: 768px) {
+    .checkbox-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  
+  @media (min-width: 1024px) {
+    .checkbox-grid {
+      grid-template-columns: repeat(4, 1fr);
+    }
+  }
+  
+  .info-panel {
+    margin-bottom: 1rem;
+    padding: 1rem;
+    background-color: #f3f4f6;
+    border-radius: 0.25rem;
+  }
+  
+  .chart-container {
+    width: 100%;
+    height: 24rem;
+  }
+  
+  .loading-message, .error-message, .no-data-message {
+    padding: 2rem;
+    text-align: center;
+  }
+  
+  .error-message {
+    color: #dc2626;
+  }
+  
+  .dataset-selector {
+    margin-bottom: 1.5rem;
+  }
+  
+  .dataset-options {
+    display: flex;
+    gap: 1rem;
+  }
+  
+  .metric-selector {
+    margin-bottom: 1.5rem;
+  }
+  
+  .metric-options {
+    display: flex;
+    gap: 1rem;
+  }
+  
+  .stats-item {
+    margin-top: 0.5rem;
+  }

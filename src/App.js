@@ -1,23 +1,18 @@
-import logo from './logo.svg';
-import './App.css';
+import React from 'react';
+import MultiModelHMMDashboard from './MultiModelHMMDashboard';
+import ExtendHMMDashboard from './ExtendHMMDashboard';
+import Extend2HMMDashboard from './Extend2HMMDashboard';
+import HMMVisualizer from './320HMMDashboard';
+import HMMVisualizer2 from './327HMMDashboard';
 
 function App() {
   return (
     <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+      <MultiModelHMMDashboard />
+      <ExtendHMMDashboard />
+      <Extend2HMMDashboard />
+      <HMMVisualizer />
+      <HMMVisualizer2 />
     </div>
   );
 }
