@@ -131,7 +131,7 @@ const EnhancedHMMVisualizer = () => {
         const matrixPropertiesMap = {};
         
         try {
-          const matrixResponse = await fetch('./data/327matrix.csv');
+          const matrixResponse = await fetch('./data/327-matrix.csv');
           if (!matrixResponse.ok) {
             console.warn("Matrix properties file not available:", matrixResponse.status);
           } else {
@@ -190,7 +190,7 @@ const EnhancedHMMVisualizer = () => {
         }
         
         // Load the main CSV file
-        const response = await fetch('/data/327-Qwen2.5-1.5B.csv');
+        const response = await fetch('./data/327-Qwen2.5-1.5B.csv');
         if (!response.ok) {
           throw new Error(`Failed to load data: ${response.status} ${response.statusText}`);
         }

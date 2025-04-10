@@ -121,7 +121,7 @@ const HMMVisualizer = () => {
         setLoading(true);
         
         // Load the CSV file from the data directory
-        const response = await fetch('/data/320-Qwen2.5-1.5B.csv');
+        const response = await fetch('./data/320-Qwen2.5-1.5B.csv');
         if (!response.ok) {
           throw new Error(`Failed to load data: ${response.status} ${response.statusText}`);
         }
