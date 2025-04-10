@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/hmm-visualization/static/css/main.c4275743.css",
+    "main.js": "/hmm-visualization/static/js/main.a76c9169.js",
+    "static/js/453.43dcd247.chunk.js": "/hmm-visualization/static/js/453.43dcd247.chunk.js",
+    "index.html": "/hmm-visualization/index.html",
+    "main.c4275743.css.map": "/hmm-visualization/static/css/main.c4275743.css.map",
+    "main.a76c9169.js.map": "/hmm-visualization/static/js/main.a76c9169.js.map",
+    "453.43dcd247.chunk.js.map": "/hmm-visualization/static/js/453.43dcd247.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.c4275743.css",
+    "static/js/main.a76c9169.js"
+  ]
+}
