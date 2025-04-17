@@ -6,6 +6,7 @@ import HMMVisualizer from './320HMMDashboard';
 import HMMVisualizer2 from './327HMMDashboard';
 import GeneralEntropy from './GeneralEntropy';
 import GeneralLambda from './GeneralLambda';
+import GeneralSteadyState from './GeneralSteadyState';
 
 function App() {
   return (
@@ -17,6 +18,7 @@ function App() {
       <HMMVisualizer2 />
       <GeneralEntropy />
       <GeneralLambda />
+      <GeneralSteadyState />
     </div>
   );
 }
