@@ -70,6 +70,29 @@ const GeneralSteadyState = () => {
     return str;
   };
   
+  // Parse first element of steady state array - using parseArray approach
+  const getFirstSteadyStateElement = (steadyStateStr) => {
+    if (!steadyStateStr) return null;
+    
+    // Use the existing parseArray function for consistency
+    const parsedArray = parseArray(steadyStateStr);
+    
+    // Handle the result based on what parseArray returned
+    if (Array.isArray(parsedArray) && parsedArray.length > 0) {
+      // If we got an array back, use the first element
+      return parseFloat(parseFloat(parsedArray[0]).toFixed(2)); // Round to 2 decimal places
+    } else if (typeof parsedArray === 'string') {
+      // If still a string, try one more approach to extract first number
+      const match = parsedArray.match(/\[(.*?)(?:,|])/);
+      if (match && match[1]) {
+        return parseFloat(parseFloat(match[1]).toFixed(2)); // Round to 2 decimal places
+      }
+    }
+    
+    console.log("Could not parse steady state:", steadyStateStr);
+    return null;
+  };
+  
   // Update available steady state values when other parameters change
   useEffect(() => {
     if (Object.keys(configMap).length === 0) return;
@@ -147,6 +170,13 @@ const GeneralSteadyState = () => {
           // Calculate steady state first element for this row
           const steadyStateValue = getFirstSteadyStateElement(row.steady_state);
           
+          // Add debug logging
+          console.log("Processed row:", {
+            steady_state: row.steady_state,
+            steady_state_first: steadyStateValue,
+            type: typeof row.steady_state
+          });
+          
           const config = {
             num_state: row.num_state,
             num_observation: row.num_observation,
@@ -196,7 +226,7 @@ const GeneralSteadyState = () => {
         if (uniqueNumObservations.length > 0) setNumObservation(uniqueNumObservations[0]);
         if (uniqueBEntropies.length > 0) setBEntropy(uniqueBEntropies[0]);
         
-        // A_entropy will be set by the useEffect that depends on the above values
+        // Steady state will be set by the useEffect that depends on the above values
         
         setAvailableModels(models);
         setSelectedModels(models.slice(0, 5)); // Select first 5 models by default
@@ -225,6 +255,7 @@ const GeneralSteadyState = () => {
     if (matchingData) {
       setCurrentData(matchingData.chartData);
       setCurrentProperties(matchingData.config);
+      console.log("Current properties:", matchingData.config); // Debug
     } else {
       console.warn('No data found for selected configuration');
       setCurrentData(null);
@@ -285,27 +316,6 @@ const GeneralSteadyState = () => {
     return <div className="loading-message">Loading data...</div>;
   }
   
-  // Parse first element of steady state array
-  const getFirstSteadyStateElement = (steadyStateStr) => {
-    if (!steadyStateStr) return null;
-    
-    try {
-      // Try to parse as string, use function parseArray
-      const array = parseArray(steadyStateStr);
-      if (array.length > 0) {
-        return parseFloat(array[0].toFixed(2)); // Round to 2 decimal places
-      }
-    } catch (e) {
-      // If not valid, try to extract first number manually
-      const match = steadyStateStr.match(/\[(.*?)(?:,|])/);
-      if (match && match[1]) {
-        return parseFloat(parseFloat(match[1]).toFixed(2)); // Round to 2 decimal places
-      }
-    }
-    
-    return null;
-  };
-  
   // Format floating point or array values for display
   const formatValue = (value) => {
     if (value === null || value === undefined) return '';
@@ -355,12 +365,12 @@ const GeneralSteadyState = () => {
           <label className="config-label">Steady State (first element):</label>
           <select 
             className="config-select"
-            value={steadyState}
+            value={steadyState || ''}
             onChange={(e) => setSteadyState(parseFloat(e.target.value))}
             disabled={availableSteadyStates.length === 0}
           >
             {availableSteadyStates.map(value => (
-              <option key={value} value={value}>{value}</option>
+              <option key={value} value={value}>{value.toFixed(2)}</option>
             ))}
           </select>
         </div>
@@ -410,7 +420,7 @@ const GeneralSteadyState = () => {
             <span className="badge-label">Observations:</span> {currentProperties.num_observation}
           </div>
           <div className="config-badge">
-            <span className="badge-label">Steady State (first):</span> {currentProperties.steady_state_first}
+            <span className="badge-label">Steady State (first):</span> {currentProperties.steady_state_first !== null ? currentProperties.steady_state_first.toFixed(2) : "N/A"}
           </div>
           <div className="config-badge">
             <span className="badge-label">Lambda2:</span> {formatValue(currentProperties.lambda2)}
