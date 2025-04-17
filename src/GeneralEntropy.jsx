@@ -189,7 +189,7 @@ const GeneralEntropy = () => {
         // A_entropy will be set by the useEffect that depends on the above values
         
         setAvailableModels(models);
-        setSelectedModels('llm_emission','2-gram','viterbi','bw'); // Select first 5 models by default
+        setSelectedModels(models.slice(0, 5)); // Select first 5 models by default
         
         setLoading(false);
       } catch (error) {
