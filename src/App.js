@@ -4,7 +4,7 @@ import ExtendHMMDashboard from './ExtendHMMDashboard';
 import Extend2HMMDashboard from './Extend2HMMDashboard';
 import HMMVisualizer from './320HMMDashboard';
 import HMMVisualizer2 from './327HMMDashboard';
-import Entropy410 from './410Entropy';
+import GeneralEntropy from './GeneralEntropy';
 import SteadyState410 from './410SteadyState';
 
 function App() {
@@ -15,7 +15,7 @@ function App() {
       <Extend2HMMDashboard />
       <HMMVisualizer />
       <HMMVisualizer2 />
-      <Entropy410 />
+      <GeneralEntropy />
       {/* <SteadyState410 /> */}
     </div>
   );

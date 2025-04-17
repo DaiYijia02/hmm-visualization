@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import Papa from 'papaparse';
-import './410Entropy.css';
+import './GeneralEntropy.css';
 
-const Entropy410 = () => {
+const GeneralEntropy = () => {
   // Configuration state
   const [numState, setNumState] = useState(4);
   const [numObservation, setNumObservation] = useState(4);
@@ -45,7 +45,7 @@ const Entropy410 = () => {
   ];
   
   const metrics = ['acc', 'hellinger_distance'];
-  const sequenceLengths = [8, 16, 32, 64, 128, 256, 512, 1024];
+  const sequenceLengths = [4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048];
   
   // Parse array strings helper function
   const parseArray = (str) => {
@@ -96,7 +96,7 @@ const Entropy410 = () => {
         setLoading(true);
         
         // Use fetch instead of window.fs.readFile
-        const response = await fetch(`./data/Qwen2.5-1.5B_11111_1024_entropy_1024.csv`);
+        const response = await fetch(`./data/Qwen2.5-1.5B_11111_4096_entropy_2048.csv`);
         const fileContent = await response.text();
         
         const parsedData = Papa.parse(fileContent, {
@@ -189,7 +189,7 @@ const Entropy410 = () => {
         // A_entropy will be set by the useEffect that depends on the above values
         
         setAvailableModels(models);
-        setSelectedModels(models.slice(0, 5)); // Select first 5 models by default
+        setSelectedModels('llm_emission','2-gram','viterbi','bw'); // Select first 5 models by default
         
         setLoading(false);
       } catch (error) {
@@ -460,4 +460,4 @@ const Entropy410 = () => {
   );
 };
 
-export default Entropy410;
+export default GeneralEntropy;
