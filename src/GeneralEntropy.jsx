@@ -231,6 +231,10 @@ const GeneralEntropy = () => {
     '4-gram': '4-gram',
     'p_o_given_prev_h': 'P(O|prev H)',
     'p_o_t_given_prev_1_o': 'P(O_t|prev 1 O)',
+    'p_o_t_given_prev_2_o': 'P(O_t|prev 2 O)',
+    'p_o_t_given_prev_3_o': 'P(O_t|prev 3 O)',
+    'p_o_t_given_prev_4_o': 'P(O_t|prev 4 O)',
+    'p_o_t_given_prev_all_o': 'P(O_t|prev all O)',
     'viterbi': 'Viterbi',
     'bw': 'Baum-Welch'
   };
@@ -245,6 +249,10 @@ const GeneralEntropy = () => {
     '4-gram': '#00c49f',
     'p_o_given_prev_h': '#ffbb28',
     'p_o_t_given_prev_1_o': '#ff8042',
+    'p_o_t_given_prev_2_o': '#ff8042',
+    'p_o_t_given_prev_3_o': '#ff8042',
+    'p_o_t_given_prev_4_o': '#ff8042',
+    'p_o_t_given_prev_all_o': '#ff8042',
     'viterbi': '#a4de6c',
     'bw': '#d0ed57'
   };
@@ -439,6 +447,7 @@ const GeneralEntropy = () => {
                 name={modelDisplayNames[model]}
                 stroke={colorMap[model]}
                 activeDot={{ r: 8 }}
+                strokeWidth={2}
                 connectNulls
               />
             ))}
