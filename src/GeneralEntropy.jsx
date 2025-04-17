@@ -390,7 +390,7 @@ const GeneralEntropy = () => {
             <span className="badge-label">A Entropy:</span> {formatAEntropy(currentProperties.A_entropy)}
           </div>
           <div className="config-badge">
-            <span className="badge-label">Steady State:</span> {formatValue(currentProperties.steady_state)}
+            <span className="badge-label">Steady State:</span> {formatValue(currentProperties.steady_state[0])}
           </div>
           <div className="config-badge">
             <span className="badge-label">Lambda2:</span> {formatValue(currentProperties.lambda2)}
