@@ -290,13 +290,13 @@ const GeneralSteadyState = () => {
     if (!steadyStateStr) return null;
     
     try {
-      // Try to parse as JSON
-      const array = JSON.parse(steadyStateStr);
-      if (Array.isArray(array) && array.length > 0) {
+      // Try to parse as string, use function parseArray
+      const array = parseArray(steadyStateStr);
+      if (array.length > 0) {
         return parseFloat(array[0].toFixed(2)); // Round to 2 decimal places
       }
     } catch (e) {
-      // If not valid JSON, try to extract first number manually
+      // If not valid, try to extract first number manually
       const match = steadyStateStr.match(/\[(.*?)(?:,|])/);
       if (match && match[1]) {
         return parseFloat(parseFloat(match[1]).toFixed(2)); // Round to 2 decimal places
@@ -355,7 +355,7 @@ const GeneralSteadyState = () => {
           <label className="config-label">Steady State (first element):</label>
           <select 
             className="config-select"
-            value={steadyState || ''}
+            value={steadyState}
             onChange={(e) => setSteadyState(parseFloat(e.target.value))}
             disabled={availableSteadyStates.length === 0}
           >
