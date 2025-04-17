@@ -289,8 +289,8 @@ const GeneralLambda = () => {
     if (typeof value === 'number') return value.toFixed(4);
     if (typeof value === 'string' && value.startsWith('[') && value.endsWith(']')) {
       try {
-        // For brevity, just show it's an array
-        return "[array]";
+        // first value of the array
+        return value.split(',')[0];
       } catch (e) {
         return value;
       }

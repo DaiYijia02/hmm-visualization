@@ -289,8 +289,8 @@ const GeneralEntropy = () => {
     if (typeof value === 'number') return value.toFixed(4);
     if (typeof value === 'string' && value.startsWith('[') && value.endsWith(']')) {
       try {
-        // For brevity, just show it's an array
-        return "[array]";
+        // first value of the array
+        return value.split(',')[0];
       } catch (e) {
         return value;
       }
@@ -390,7 +390,7 @@ const GeneralEntropy = () => {
             <span className="badge-label">A Entropy:</span> {formatAEntropy(currentProperties.A_entropy)}
           </div>
           <div className="config-badge">
-            <span className="badge-label">Steady State:</span> {formatValue(currentProperties.steady_state[0])}
+            <span className="badge-label">Steady State:</span> {formatValue(currentProperties.steady_state)}
           </div>
           <div className="config-badge">
             <span className="badge-label">Lambda2:</span> {formatValue(currentProperties.lambda2)}
