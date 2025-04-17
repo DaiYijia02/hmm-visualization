@@ -144,7 +144,9 @@ const GeneralEntropy = () => {
             num_state: row.num_state,
             num_observation: row.num_observation,
             A_entropy: row.A_entropy,
-            B_entropy: row.B_entropy
+            B_entropy: row.B_entropy,
+            steady_state: row.steady_state, // Include steady_state
+            lambda2: row.lambda2 // Include lambda2
           };
           
           // Prepare chart data for this configuration
@@ -281,6 +283,21 @@ const GeneralEntropy = () => {
     return typeof value === 'number' ? value.toFixed(2) : value;
   };
   
+  // Format floating point or array values for display
+  const formatValue = (value) => {
+    if (value === null || value === undefined) return '';
+    if (typeof value === 'number') return value.toFixed(4);
+    if (typeof value === 'string' && value.startsWith('[') && value.endsWith(']')) {
+      try {
+        // For brevity, just show it's an array
+        return "[array]";
+      } catch (e) {
+        return value;
+      }
+    }
+    return value;
+  };
+  
   const parameterSelector = (
     <div className="config-section">
       <h3 className="config-title">Configuration Settings</h3>
@@ -373,6 +390,12 @@ const GeneralEntropy = () => {
             <span className="badge-label">A Entropy:</span> {formatAEntropy(currentProperties.A_entropy)}
           </div>
           <div className="config-badge">
+            <span className="badge-label">Steady State:</span> {formatValue(currentProperties.steady_state)}
+          </div>
+          <div className="config-badge">
+            <span className="badge-label">Lambda2:</span> {formatValue(currentProperties.lambda2)}
+          </div>
+          <div className="config-badge">
             <span className="badge-label">B Entropy:</span> {currentProperties.B_entropy}
           </div>
         </div>
@@ -463,6 +486,8 @@ const GeneralEntropy = () => {
           <li>X-axis uses logarithmic scale</li>
           <li>A_entropy represents transition matrix complexity</li>
           <li>B_entropy represents emission matrix complexity</li>
+          <li>Lambda2 is the second largest eigenvalue of transition matrix</li>
+          <li>Steady State represents the equilibrium distribution</li>
         </ul>
       </div>
     </div>
