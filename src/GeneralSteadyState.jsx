@@ -1,17 +1,4 @@
-// Format value for display
-const formatValue = (value) => {
-    if (value === null || value === undefined) return '';
-    if (typeof value === 'number') return value.toFixed(4);
-    if (typeof value === 'string' && value.startsWith('[') && value.endsWith(']')) {
-      try {
-        // For brevity, just show it's an array
-        return "[array]";
-      } catch (e) {
-        return value;
-      }
-    }
-    return value;
-  };import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import Papa from 'papaparse';
 import './GeneralEntropy.css';
@@ -373,7 +360,7 @@ const GeneralSteadyState = () => {
             disabled={availableSteadyStates.length === 0}
           >
             {availableSteadyStates.map(value => (
-              <option key={value} value={value}>{formatSteadyState(value)}</option>
+              <option key={value} value={value}>{value}</option>
             ))}
           </select>
         </div>
@@ -423,7 +410,7 @@ const GeneralSteadyState = () => {
             <span className="badge-label">Observations:</span> {currentProperties.num_observation}
           </div>
           <div className="config-badge">
-            <span className="badge-label">Steady State (first):</span> {formatSteadyState(currentProperties.steady_state_first)}
+            <span className="badge-label">Steady State (first):</span> {currentProperties.steady_state_first}
           </div>
           <div className="config-badge">
             <span className="badge-label">Lambda2:</span> {formatValue(currentProperties.lambda2)}
