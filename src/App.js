@@ -11,11 +11,11 @@ import GeneralSteadyState from './GeneralSteadyState';
 function App() {
   return (
     <div className="App">
-      <MultiModelHMMDashboard />
+      {/* <MultiModelHMMDashboard />
       <ExtendHMMDashboard />
       <Extend2HMMDashboard />
       <HMMVisualizer />
-      <HMMVisualizer2 />
+      <HMMVisualizer2 /> */}
       <GeneralEntropy />
       <GeneralLambda />
       <GeneralSteadyState />
