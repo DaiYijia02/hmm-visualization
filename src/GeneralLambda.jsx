@@ -40,6 +40,10 @@ const GeneralLambda = () => {
     '4-gram',
     'p_o_given_prev_h',
     'p_o_t_given_prev_1_o',
+    'p_o_t_given_prev_2_o',
+    'p_o_t_given_prev_3_o',
+    'p_o_t_given_prev_4_o',
+    'p_o_t_given_prev_all_o',
     'viterbi',
     'bw'
   ];

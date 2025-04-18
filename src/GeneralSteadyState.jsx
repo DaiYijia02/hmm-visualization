@@ -40,6 +40,10 @@ const GeneralSteadyState = () => {
     '4-gram',
     'p_o_given_prev_h',
     'p_o_t_given_prev_1_o',
+    'p_o_t_given_prev_2_o',
+    'p_o_t_given_prev_3_o',
+    'p_o_t_given_prev_4_o',
+    'p_o_t_given_prev_all_o',
     'viterbi',
     'bw'
   ];
@@ -265,9 +269,11 @@ const GeneralSteadyState = () => {
   // Model names mapping for display
   const modelDisplayNames = {
     'llm_emission': 'LLM Emission',
-    'random_emission': 'Random Emission',
-    '1-gram': '1-gram',
+    'viterbi': 'Viterbi',
+    'bw': 'Baum-Welch',
     '2-gram': '2-gram',
+    'p_o_t_given_prev_all_o': 'P(O_t|prev all O)',
+    '1-gram': '1-gram',
     '3-gram': '3-gram',
     '4-gram': '4-gram',
     'p_o_given_prev_h': 'P(O|prev H)',
@@ -275,27 +281,25 @@ const GeneralSteadyState = () => {
     'p_o_t_given_prev_2_o': 'P(O_t|prev 2 O)',
     'p_o_t_given_prev_3_o': 'P(O_t|prev 3 O)',
     'p_o_t_given_prev_4_o': 'P(O_t|prev 4 O)',
-    'p_o_t_given_prev_all_o': 'P(O_t|prev all O)',
-    'viterbi': 'Viterbi',
-    'bw': 'Baum-Welch'
+    'random_emission': 'Random Emission'
   };
   
   // Color mapping for models
   const colorMap = {
-    'llm_emission': '#8884d8',
+    'llm_emission': '#423bd1',
+    'viterbi': '#e8d651',
+    'bw': '#3bd1b6',
+    '2-gram': '#57c754',
     'random_emission': '#82ca9d',
-    '1-gram': '#ffc658',
-    '2-gram': '#ff7300',
-    '3-gram': '#0088fe',
-    '4-gram': '#00c49f',
-    'p_o_given_prev_h': '#ffbb28',
-    'p_o_t_given_prev_1_o': '#ff8042',
-    'p_o_t_given_prev_2_o': '#ff8042',
-    'p_o_t_given_prev_3_o': '#ff8042',
-    'p_o_t_given_prev_4_o': '#ff8042',
-    'p_o_t_given_prev_all_o': '#ff8042',
-    'viterbi': '#a4de6c',
-    'bw': '#d0ed57'
+    '1-gram': '#57c754',
+    '3-gram': '#57c754',
+    '4-gram': '#57c754',
+    'p_o_given_prev_h': '#e8d651',
+    'p_o_t_given_prev_1_o': '#e8d651',
+    'p_o_t_given_prev_2_o': '#e8d651',
+    'p_o_t_given_prev_3_o': '#e8d651',
+    'p_o_t_given_prev_4_o': '#e8d651',
+    'p_o_t_given_prev_all_o': '#e8d651'
   };
   
   // Metric display names
