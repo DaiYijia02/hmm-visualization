@@ -33,9 +33,11 @@ const GeneralSteadyState = () => {
   // Constants
   const models = [
     'llm_emission',
-    'random_emission',
-    '1-gram',
+    'bw',
+    'viterbi',
+    'p_o_t_given_prev_all_o',
     '2-gram',
+    '1-gram',
     '3-gram',
     '4-gram',
     'p_o_given_prev_h',
@@ -43,9 +45,7 @@ const GeneralSteadyState = () => {
     'p_o_t_given_prev_2_o',
     'p_o_t_given_prev_3_o',
     'p_o_t_given_prev_4_o',
-    'p_o_t_given_prev_all_o',
-    'viterbi',
-    'bw'
+    'random_emission'
   ];
   
   const metrics = ['acc', 'hellinger_distance'];
@@ -286,9 +286,9 @@ const GeneralSteadyState = () => {
   
   // Color mapping for models
   const colorMap = {
-    'llm_emission': '#423bd1',
-    'viterbi': '#e8d651',
-    'bw': '#3bd1b6',
+    'llm_emission': '#8884d8',
+    'viterbi': '#ffc658',
+    'bw': '#00c49f',
     '2-gram': '#57c754',
     'random_emission': '#82ca9d',
     '1-gram': '#57c754',

@@ -33,9 +33,11 @@ const GeneralLambda = () => {
   // Constants
   const models = [
     'llm_emission',
-    'random_emission',
-    '1-gram',
+    'bw',
+    'viterbi',
+    'p_o_t_given_prev_all_o',
     '2-gram',
+    '1-gram',
     '3-gram',
     '4-gram',
     'p_o_given_prev_h',
@@ -43,9 +45,7 @@ const GeneralLambda = () => {
     'p_o_t_given_prev_2_o',
     'p_o_t_given_prev_3_o',
     'p_o_t_given_prev_4_o',
-    'p_o_t_given_prev_all_o',
-    'viterbi',
-    'bw'
+    'random_emission'
   ];
   
   const metrics = ['acc', 'hellinger_distance'];
@@ -248,19 +248,19 @@ const GeneralLambda = () => {
   // Color mapping for models
   const colorMap = {
     'llm_emission': '#8884d8',
+    'viterbi': '#ffc658',
+    'bw': '#00c49f',
+    '2-gram': '#57c754',
     'random_emission': '#82ca9d',
-    '1-gram': '#ffc658',
-    '2-gram': '#ff7300',
-    '3-gram': '#0088fe',
-    '4-gram': '#00c49f',
-    'p_o_given_prev_h': '#ffbb28',
-    'p_o_t_given_prev_1_o': '#ff8042',
-    'p_o_t_given_prev_2_o': '#ff8042',
-    'p_o_t_given_prev_3_o': '#ff8042',
-    'p_o_t_given_prev_4_o': '#ff8042',
-    'p_o_t_given_prev_all_o': '#ff8042',
-    'viterbi': '#a4de6c',
-    'bw': '#d0ed57'
+    '1-gram': '#57c754',
+    '3-gram': '#57c754',
+    '4-gram': '#57c754',
+    'p_o_given_prev_h': '#e8d651',
+    'p_o_t_given_prev_1_o': '#e8d651',
+    'p_o_t_given_prev_2_o': '#e8d651',
+    'p_o_t_given_prev_3_o': '#e8d651',
+    'p_o_t_given_prev_4_o': '#e8d651',
+    'p_o_t_given_prev_all_o': '#e8d651'
   };
   
   // Metric display names
