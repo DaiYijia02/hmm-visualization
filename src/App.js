@@ -1,5 +1,5 @@
 import React from 'react';
-import MultiModelHMMDashboard from './MultiModelHMMDashboard';
+// import MultiModelHMMDashboard from './MultiModelHMMDashboard';
 import ExtendHMMDashboard from './ExtendHMMDashboard';
 import Extend2HMMDashboard from './Extend2HMMDashboard';
 import HMMVisualizer from './320HMMDashboard';
@@ -11,8 +11,8 @@ import GeneralSteadyState from './GeneralSteadyState';
 function App() {
   return (
     <div className="App">
-      {/* <MultiModelHMMDashboard />
-      <ExtendHMMDashboard />
+      <MultiModelHMMDashboard />
+      {/* <ExtendHMMDashboard />
       <Extend2HMMDashboard />
       <HMMVisualizer />
       <HMMVisualizer2 /> */}
