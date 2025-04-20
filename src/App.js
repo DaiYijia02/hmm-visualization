@@ -12,10 +12,10 @@ function App() {
   return (
     <div className="App">
       <MultiModelHMMDashboard />
-      {/* <ExtendHMMDashboard />
+      <ExtendHMMDashboard />
       <Extend2HMMDashboard />
       <HMMVisualizer />
-      <HMMVisualizer2 /> */}
+      <HMMVisualizer2 />
       <GeneralEntropy />
       <GeneralLambda />
       <GeneralSteadyState />
