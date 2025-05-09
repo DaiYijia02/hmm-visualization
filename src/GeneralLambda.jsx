@@ -100,7 +100,7 @@ const GeneralLambda = () => {
         setLoading(true);
         
         // Use fetch instead of window.fs.readFile
-        const response = await fetch(`./data/Qwen2.5-7B_11111_4096_lambda2_2048.csv`);
+        const response = await fetch(`./data/Qwen2.5-1.5B_11111_4096_lambda2_2048.csv`);
         const fileContent = await response.text();
         
         const parsedData = Papa.parse(fileContent, {
