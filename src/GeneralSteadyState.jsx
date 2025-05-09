@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import Papa from 'papaparse';
-import './GeneralEntropy.css';
 
 const GeneralSteadyState = () => {
   // Configuration state
@@ -26,28 +25,16 @@ const GeneralSteadyState = () => {
   
   // Display state
   const [selectedMetric, setSelectedMetric] = useState('acc');
+  const [selectedModelType, setSelectedModelType] = useState('llm');
   const [selectedModels, setSelectedModels] = useState([]);
   const [availableModels, setAvailableModels] = useState([]);
   const [loading, setLoading] = useState(true);
   
-  // Constants
-  const models = [
-    'llm_emission',
-    'bw',
-    'viterbi',
-    'p_o_t_given_prev_all_o',
-    '2-gram',
-    '1-gram',
-    '3-gram',
-    '4-gram',
-    'p_o_given_prev_h',
-    'p_o_t_given_prev_1_o',
-    'p_o_t_given_prev_2_o',
-    'p_o_t_given_prev_3_o',
-    'p_o_t_given_prev_4_o',
-    'random_emission'
-  ];
+  // Categorize models
+  const [llmModels, setLlmModels] = useState([]);
+  const [baselineModels, setBaselineModels] = useState([]);
   
+  // Constants
   const metrics = ['acc', 'hellinger_distance'];
   const sequenceLengths = [4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048];
   
@@ -55,26 +42,20 @@ const GeneralSteadyState = () => {
   const parseArray = (str) => {
     if (typeof str === 'string' && str.includes('[') && str.includes(']')) {
       try {
-        return JSON.parse(str);
+        return JSON.parse(str.replace(/\s+/g, ''));
       } catch (e) {
-        // Clean string and try again
-        const cleanStr = str.replace(/\s+/g, '');
-        try {
-          return JSON.parse(cleanStr);
-        } catch (e2) {
-          // Try extracting values manually
-          const match = cleanStr.match(/\[(.*?)\]/);
-          if (match && match[1]) {
-            return match[1].split(',').map(item => parseFloat(item));
-          }
-          return str;
+        // Try extracting values manually
+        const match = str.match(/\[(.*?)\]/);
+        if (match && match[1]) {
+          return match[1].split(',').map(item => parseFloat(item.trim()));
         }
+        return str;
       }
     }
     return str;
   };
   
-  // Parse first element of steady state array - using parseArray approach
+  // Parse first element of steady state array
   const getFirstSteadyStateElement = (steadyStateStr) => {
     if (!steadyStateStr) return null;
     
@@ -93,7 +74,6 @@ const GeneralSteadyState = () => {
       }
     }
     
-    console.log("Could not parse steady state:", steadyStateStr);
     return null;
   };
   
@@ -116,14 +96,36 @@ const GeneralSteadyState = () => {
     }
   }, [numState, numObservation, bEntropy, configMap, steadyState]);
   
+  // Set available models based on selected model type
+  useEffect(() => {
+    let models = [];
+    switch (selectedModelType) {
+      case 'llm':
+        models = llmModels;
+        break;
+      case 'baseline':
+        models = baselineModels;
+        break;
+      case 'all':
+        models = [...llmModels, ...baselineModels];
+        break;
+      default:
+        models = llmModels;
+    }
+    
+    setAvailableModels(models);
+    // Select first 5 models or all if less than 5
+    setSelectedModels(models.slice(0, Math.min(5, models.length)));
+  }, [selectedModelType, llmModels, baselineModels]);
+  
   // Load data
   useEffect(() => {
     const fetchData = async () => {
       try {
         setLoading(true);
         
-        // Use fetch instead of window.fs.readFile
-        const response = await fetch(`./data/Qwen2.5-1.5B_11111_4096_steady_state_2048.csv`);
+        // Fetch the CSV file
+        const response = await fetch('./data/entropy_results.csv');
         const fileContent = await response.text();
         
         const parsedData = Papa.parse(fileContent, {
@@ -146,7 +148,7 @@ const GeneralSteadyState = () => {
         setAvailableNumObservations(uniqueNumObservations);
         setAvailableBEntropies(uniqueBEntropies);
         
-        // Build configuration map
+        // Build configuration map - based on first element of steady state
         const configMapping = {};
         parsedData.data.forEach(row => {
           const key = `${row.num_state}_${row.num_observation}_${row.B_entropy}`;
@@ -169,17 +171,28 @@ const GeneralSteadyState = () => {
         
         setConfigMap(configMapping);
         
+        // Categorize models
+        const llmModelsTemp = [];
+        const baselineModelsTemp = [];
+        
+        parsedData.meta.fields
+          .filter(field => field.endsWith('_acc'))
+          .forEach(field => {
+            const model = field.replace('_acc', '');
+            if (model.startsWith('llm_')) {
+              llmModelsTemp.push(model);
+            } else {
+              baselineModelsTemp.push(model);
+            }
+          });
+        
+        setLlmModels(llmModelsTemp);
+        setBaselineModels(baselineModelsTemp);
+        
         // Process all rows
         const processedData = parsedData.data.map(row => {
           // Calculate steady state first element for this row
           const steadyStateValue = getFirstSteadyStateElement(row.steady_state);
-          
-          // Add debug logging
-          console.log("Processed row:", {
-            steady_state: row.steady_state,
-            steady_state_first: steadyStateValue,
-            type: typeof row.steady_state
-          });
           
           const config = {
             num_state: row.num_state,
@@ -201,7 +214,9 @@ const GeneralSteadyState = () => {
               const dataPoint = { sequenceLength: sequenceLengths[i] };
               
               // Add model values for this sequence length
-              for (const model of models) {
+              const allModels = [...llmModelsTemp, ...baselineModelsTemp];
+              
+              for (const model of allModels) {
                 const key = `${model}_${metric}`;
                 if (row[key] !== undefined) {
                   const values = parseArray(row[key]);
@@ -230,11 +245,6 @@ const GeneralSteadyState = () => {
         if (uniqueNumObservations.length > 0) setNumObservation(uniqueNumObservations[0]);
         if (uniqueBEntropies.length > 0) setBEntropy(uniqueBEntropies[0]);
         
-        // Steady state will be set by the useEffect that depends on the above values
-        
-        setAvailableModels(models);
-        setSelectedModels(models.slice(0, 5)); // Select first 5 models by default
-        
         setLoading(false);
       } catch (error) {
         console.error('Error processing data:', error);
@@ -259,7 +269,6 @@ const GeneralSteadyState = () => {
     if (matchingData) {
       setCurrentData(matchingData.chartData);
       setCurrentProperties(matchingData.config);
-      console.log("Current properties:", matchingData.config); // Debug
     } else {
       console.warn('No data found for selected configuration');
       setCurrentData(null);
@@ -267,39 +276,84 @@ const GeneralSteadyState = () => {
   }, [numState, numObservation, steadyState, bEntropy, allData]);
   
   // Model names mapping for display
-  const modelDisplayNames = {
-    'llm_emission': 'LLM Emission',
-    'viterbi': 'Viterbi',
-    'bw': 'Baum-Welch',
-    '2-gram': '2-gram',
-    'p_o_t_given_prev_all_o': 'P(O_t|prev all O)',
-    '1-gram': '1-gram',
-    '3-gram': '3-gram',
-    '4-gram': '4-gram',
-    'p_o_given_prev_h': 'P(O|prev H)',
-    'p_o_t_given_prev_1_o': 'P(O_t|prev 1 O)',
-    'p_o_t_given_prev_2_o': 'P(O_t|prev 2 O)',
-    'p_o_t_given_prev_3_o': 'P(O_t|prev 3 O)',
-    'p_o_t_given_prev_4_o': 'P(O_t|prev 4 O)',
-    'random_emission': 'Random Emission'
+  const getModelDisplayName = (modelId) => {
+    if (modelId.startsWith('llm_')) {
+      // Format LLM model names (e.g., llm_qwen_1_5b -> Qwen 1.5B)
+      const parts = modelId.replace('llm_', '').split('_');
+      const modelName = parts[0].charAt(0).toUpperCase() + parts[0].slice(1);
+      
+      // Handle size format (e.g., 1_5b -> 1.5B)
+      let sizeStr = '';
+      if (parts.length > 1) {
+        const sizeNumbers = parts.slice(1).join('.');
+        sizeStr = sizeNumbers.replace('b', 'B');
+      }
+      
+      return `${modelName} ${sizeStr}`;
+    }
+    
+    // Handle special cases
+    const specialCases = {
+      'random_emission': 'Random Emission',
+      'lstm_emission': 'LSTM Emission',
+      'p_o_given_prev_h': 'P(O|prev H)',
+      'p_o_t_given_prev_1_o': 'P(O_t|prev 1 O)',
+      'p_o_t_given_prev_2_o': 'P(O_t|prev 2 O)',
+      'p_o_t_given_prev_3_o': 'P(O_t|prev 3 O)',
+      'p_o_t_given_prev_4_o': 'P(O_t|prev 4 O)',
+      'p_o_t_given_prev_all_o': 'P(O_t|prev all O)',
+      'viterbi': 'Viterbi',
+      'bw': 'Baum-Welch',
+      '1-gram': '1-gram',
+      '2-gram': '2-gram',
+      '3-gram': '3-gram',
+      '4-gram': '4-gram'
+    };
+    
+    return specialCases[modelId] || modelId;
   };
   
   // Color mapping for models
-  const colorMap = {
-    'llm_emission': '#8884d8',
-    'viterbi': '#ffc658',
-    'bw': '#00c49f',
-    '2-gram': '#57c754',
-    'random_emission': '#82ca9d',
-    '1-gram': '#57c754',
-    '3-gram': '#57c754',
-    '4-gram': '#57c754',
-    'p_o_given_prev_h': '#e8d651',
-    'p_o_t_given_prev_1_o': '#e8d651',
-    'p_o_t_given_prev_2_o': '#e8d651',
-    'p_o_t_given_prev_3_o': '#e8d651',
-    'p_o_t_given_prev_4_o': '#e8d651',
-    'p_o_t_given_prev_all_o': '#e8d651'
+  const getModelColor = (modelId) => {
+    // LLM model colors - use a gradient of purples
+    if (modelId.startsWith('llm_llama')) {
+      if (modelId.includes('1b')) return '#9f7aea';
+      if (modelId.includes('3b')) return '#805ad5';
+      if (modelId.includes('8b')) return '#6b46c1';
+      return '#553c9a'; // default llama color
+    }
+    
+    if (modelId.startsWith('llm_qwen')) {
+      if (modelId.includes('0_5b')) return '#f687b3';
+      if (modelId.includes('1_5b')) return '#d53f8c';
+      if (modelId.includes('3b')) return '#b83280';
+      if (modelId.includes('7b')) return '#97266d';
+      return '#702459'; // default qwen color
+    }
+    
+    // Special case for baseline models
+    const baselineColors = {
+      'random_emission': '#e53e3e',
+      '1-gram': '#38a169',
+      '2-gram': '#2f855a',
+      '3-gram': '#276749',
+      '4-gram': '#22543d'
+    };
+    
+    // Special case for other models
+    const otherColors = {
+      'lstm_emission': '#4299e1',
+      'viterbi': '#f6ad55',
+      'bw': '#00c49f',
+      'p_o_given_prev_h': '#f6e05e',
+      'p_o_t_given_prev_1_o': '#ecc94b',
+      'p_o_t_given_prev_2_o': '#d69e2e',
+      'p_o_t_given_prev_3_o': '#b7791f',
+      'p_o_t_given_prev_4_o': '#975a16',
+      'p_o_t_given_prev_all_o': '#744210'
+    };
+    
+    return baselineColors[modelId] || otherColors[modelId] || '#718096'; // default gray
   };
   
   // Metric display names
@@ -317,7 +371,12 @@ const GeneralSteadyState = () => {
   };
   
   if (loading) {
-    return <div className="loading-message">Loading data...</div>;
+    return (
+      <div className="loading-message">
+        <h2>Loading data...</h2>
+        <p>Please wait while we process the steady state results.</p>
+      </div>
+    );
   }
   
   // Format floating point or array values for display
@@ -406,11 +465,9 @@ const GeneralSteadyState = () => {
     );
   }
   
-  const chartTitle = `Steady State Varying`;
-  
   return (
     <div className="visualization-container">
-      <h2 className="visualization-title">{chartTitle}</h2>
+      <h2 className="visualization-title">Steady State Visualization</h2>
       
       {parameterSelector}
       
@@ -454,16 +511,38 @@ const GeneralSteadyState = () => {
       </div>
       
       <div className="models-section">
-        <h3 className="config-title">Models</h3>
+        <h3 className="config-title">Model Categories</h3>
+        <div className="model-category-buttons">
+          <button
+            className={`model-button ${selectedModelType === 'all' ? 'model-button-selected' : ''}`}
+            onClick={() => setSelectedModelType('all')}
+          >
+            All Models
+          </button>
+          <button
+            className={`model-button ${selectedModelType === 'llm' ? 'model-button-selected' : ''}`}
+            onClick={() => setSelectedModelType('llm')}
+          >
+            LLM Models
+          </button>
+          <button
+            className={`model-button ${selectedModelType === 'baseline' ? 'model-button-selected' : ''}`}
+            onClick={() => setSelectedModelType('baseline')}
+          >
+            Baseline Models
+          </button>
+        </div>
+        
+        <h3 className="config-title">Selected Models</h3>
         <div className="model-buttons">
           {availableModels.map(model => (
             <button
               key={model}
               className={`model-button ${selectedModels.includes(model) ? 'model-button-selected' : ''}`}
               onClick={() => toggleModelSelection(model)}
-              style={{ borderColor: colorMap[model] }}
+              style={{ borderColor: getModelColor(model) }}
             >
-              {modelDisplayNames[model]}
+              {getModelDisplayName(model)}
             </button>
           ))}
         </div>
@@ -504,8 +583,8 @@ const GeneralSteadyState = () => {
                 key={model}
                 type="monotone"
                 dataKey={model}
-                name={modelDisplayNames[model]}
-                stroke={colorMap[model]}
+                name={getModelDisplayName(model)}
+                stroke={getModelColor(model)}
                 activeDot={{ r: 8 }}
                 strokeWidth={2}
                 connectNulls
