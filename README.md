@@ -1,4 +1,24 @@
-# Getting Started with Create React App
+# HMM Visualization Dashboard
+
+An interactive dashboard for analyzing Hidden Markov Model (HMM) performance across different language models and experimental configurations.
+
+## Features
+
+- **Multi-Model Analysis**: Compare performance across different language model sizes and architectures
+- **Interactive Filtering**: Filter by model parameters like states, observations, entropy levels
+- **Multiple Visualizations**: Specialized dashboards for different aspects of HMM analysis
+- **Responsive Design**: Works on desktop and mobile devices
+- **Navigation System**: Easy-to-use dashboard navigation
+- **Error Handling**: Robust error handling and loading states
+
+## Available Dashboards
+
+1. **Multi-Model Analysis** - Compare multiple HMM models side by side
+2. **Extended Analysis** - Advanced HMM analysis with extended parameters
+3. **HMM 320/327 Analysis** - Dataset-specific analysis dashboards
+4. **Entropy Analysis** - Visualization of entropy characteristics
+5. **Lambda Analysis** - Lambda2 eigenvalue analysis for mixing times
+6. **Steady State Analysis** - Equilibrium distribution analysis
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 

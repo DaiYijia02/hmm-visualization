@@ -1,0 +1,142 @@
+/* ErrorMessage.css */
+
+.error-message {
+  margin: 1rem 0;
+  border-radius: 8px;
+  background-color: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+}
+
+.error-message-warning {
+  background-color: #fffbeb;
+  border-color: #fed7aa;
+  color: #92400e;
+}
+
+.error-message-critical {
+  background-color: #fdf2f8;
+  border-color: #fbb6ce;
+  color: #be185d;
+}
+
+.error-message-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.error-message-icon {
+  font-size: 1.5rem;
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.error-message-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.error-message-title {
+  font-size: 1rem;
+  font-weight: 600;
+  margin: 0 0 0.25rem 0;
+}
+
+.error-message-description {
+  font-size: 0.875rem;
+  margin: 0;
+  line-height: 1.5;
+  word-wrap: break-word;
+}
+
+.error-message-actions {
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+}
+
+.error-retry-button {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background-color: #dc2626;
+  color: white;
+}
+
+.error-message-warning .error-retry-button {
+  background-color: #d97706;
+}
+
+.error-message-critical .error-retry-button {
+  background-color: #be185d;
+}
+
+.error-retry-button:hover {
+  transform: translateY(-1px);
+  opacity: 0.9;
+}
+
+.error-retry-button:active {
+  transform: translateY(0);
+}
+
+.error-message-details {
+  border-top: 1px solid #fecaca;
+  margin-top: 0;
+}
+
+.error-message-warning .error-message-details {
+  border-top-color: #fed7aa;
+}
+
+.error-message-critical .error-message-details {
+  border-top-color: #fbb6ce;
+}
+
+.error-message-details summary {
+  padding: 0.75rem 1rem;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background-color: rgba(0, 0, 0, 0.02);
+}
+
+.error-message-details summary:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+.error-message-stack {
+  padding: 1rem;
+  margin: 0;
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 0.75rem;
+  background-color: rgba(0, 0, 0, 0.05);
+  white-space: pre-wrap;
+  overflow-x: auto;
+  border-top: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+  .error-message-content {
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .error-message-actions {
+    align-self: stretch;
+  }
+
+  .error-retry-button {
+    width: 100%;
+  }
+
+  .error-message-icon {
+    align-self: center;
+  }
+}

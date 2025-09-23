@@ -1,140 +1,43 @@
 import React, { useState, useEffect } from 'react';
-import Papa from 'papaparse';
-import _ from 'lodash';
-import { 
+import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer,
   Label
 } from 'recharts';
+import { useMultipleCSVData } from './hooks/useCSVData';
+import {
+  parseStringArray,
+  calculateMatrixEntropy,
+  getPiType,
+  getEntropyCategory,
+  getUniqueValues,
+  isValidNumber,
+  safeArrayAccess
+} from './utils/dataUtils';
+import { models } from './config/models';
+import {
+  METRIC_TYPES as metricTypes,
+  METRIC_MEASURES as metricMeasures,
+  ALT_SEQUENCE_LENGTHS as seqLengths,
+  MODEL_COLORS,
+  CHART_COLORS as METRIC_COLORS,
+  getModelColor
+} from './config/constants';
+import LoadingSpinner from './components/LoadingSpinner';
+import ErrorMessage from './components/ErrorMessage';
 import './Dashboard.css';
 
-// Available models
-const models = [
-  { id: 'Qwen2.57B', file: 'Qwen2.5-7B.csv', label: 'Qwen 2 (7B)' },
-  { id: 'Qwen2.53B', file: 'Qwen2.5-3B.csv', label: 'Qwen 2 (3B)' },
-  { id: 'Qwen2.51.5B', file: 'Qwen2.5-1.5B.csv', label: 'Qwen 2 (1.5B)' },
-  { id: 'Qwen2.50.5B', file: 'Qwen2.5-0.5B.csv', label: 'Qwen 2 (0.5B)' }
-];
+// Use imported configurations
 
-// Mapping for sequence lengths
-const seqLengths = [8, 16, 32, 64, 128, 256, 512, 1024];
-
-// Metric types
-const metricTypes = [
-  { id: 'llm_emission', label: 'LLM Model' },
-  { id: 'random_emission', label: 'Random' },
-  { id: 'previous_emission', label: 'Bigram' },
-  { id: 'p_o_given_prev_h', label: 'P(O|Prev H)' },
-  { id: 'p_o_t_given_prev_1_o', label: 'P(O|Prev 1 O)' },
-  { id: 'p_o_t_given_prev_2_o', label: 'P(O|Prev 2 O)' },
-  { id: 'p_o_t_given_prev_3_o', label: 'P(O|Prev 3 O)' },
-  { id: 'p_o_t_given_prev_4_o', label: 'P(O|Prev 4 O)' },
-  { id: 'p_o_t_given_prev_5_o', label: 'P(O|Prev 5 O)' },
-  { id: 'p_o_t_given_prev_6_o', label: 'P(O|Prev 6 O)' },
-  { id: 'p_o_t_given_prev_7_o', label: 'P(O|Prev 7 O)' },
-  { id: 'p_o_t_given_prev_8_o', label: 'P(O|Prev 8 O)' },
-  { id: 'p_o_t_given_prev_all_o', label: 'P(O|All Prev O)' }
-];
-
-// Metric measures
-const metricMeasures = [
-  { id: 'acc', label: 'Accuracy' },
-  { id: 'reverse_kl', label: 'Reverse KL Divergence' },
-  { id: 'forward_kl', label: 'Forward KL Divergence' },
-  { id: 'hellinger_distance', label: 'Hellinger Distance' }
-];
-
-// Colors for the chart lines by model
-const MODEL_COLORS = {
-  'Qwen2.57B': '#1f77b4',  // blue
-  'Qwen2.53B': '#ff7f0e',  // orange
-  'Qwen2.51.5B': '#2ca02c', // green
-  'Qwen2.50.5B': '#d62728'  // red
-};
-
-// Colors for the chart lines by metric
-const METRIC_COLORS = [
-  "#1f77b4", "#ff7f0e", "#2ca02c", "#d62728", "#9467bd", 
-  "#8c564b", "#e377c2", "#7f7f7f", "#bcbd22", "#17becf",
-  "#aec7e8", "#ffbb78", "#98df8a"
-];
-
-// Function to parse string representation of arrays
-function parseStringArray(str) {
-  try {
-    if (!str) return [];
-    
-    // Replace single quotes with double quotes for proper JSON parsing
-    const jsonStr = str.replace(/'/g, '"');
-    return JSON.parse(jsonStr);
-  } catch (e) {
-    console.error('Error parsing array:', str);
-    return [];
-  }
-}
-
-// Function to calculate entropy of a matrix
-function calculateMatrixEntropy(matrix) {
-  if (!matrix || !matrix.length) return 0;
-  
-  // Calculate entropy for each row and average
-  const rowEntropies = matrix.map(row => {
-    if (!row || !row.length) return 0;
-    
-    let entropy = 0;
-    const sum = row.reduce((a, b) => a + b, 0);
-    
-    for (let p of row) {
-      if (p > 0) {
-        const normalized = p / sum;
-        entropy -= normalized * Math.log2(normalized);
-      }
-    }
-    
-    return entropy;
-  });
-  
-  return rowEntropies.reduce((a, b) => a + b, 0) / rowEntropies.length;
-}
-
-// Function to determine if pi is deterministic (one-hot) or uniform
-function getPiType(pi) {
-  // Check if one value is 1 and the rest are 0
-  const isOnehot = pi.filter(val => Math.abs(val - 1) < 1e-5).length === 1 && 
-                  pi.filter(val => Math.abs(val) < 1e-5).length === pi.length - 1;
-  return isOnehot ? "deterministic" : "uniform";
-}
-
-// Function to categorize entropy values
-function getEntropyCategory(entropy) {
-  if (entropy < 0.01) return "0.0";
-  if (entropy < 0.75) return "0.5";
-  if (entropy < 1.25) return "1.0";
-  if (entropy < 1.75) return "1.5"; 
-  if (entropy < 2.25) return "2.0";
-  if (entropy < 2.75) return "2.5";
-  return "3.0";
-}
-
-// Helper function to fetch CSV data from local files
-async function fetchCSVFile(filename) {
-  try {
-    const response = await fetch(`./data/${filename}`);
-    if (!response.ok) {
-      throw new Error(`Failed to fetch ${filename}: ${response.status} ${response.statusText}`);
-    }
-    return await response.text();
-  } catch (error) {
-    console.error(`Error fetching ${filename}:`, error);
-    throw error;
-  }
-}
+// Utility functions are now imported from utils/dataUtils.js
 
 const MultiModelHMMDashboard = () => {
-  // State for the data
+  // Use custom hook for data loading
+  const fileConfigs = models.map(model => ({ filename: model.file, key: model.id }));
+  const { data: rawCSVData, loading, error } = useMultipleCSVData(fileConfigs);
+
+  // State for processed data
   const [rawData, setRawData] = useState({});
   const [processedData, setProcessedData] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
   
   // Filter states - single selection
   const [selectedState, setSelectedState] = useState(null);
@@ -156,97 +59,67 @@ const MultiModelHMMDashboard = () => {
   const [bEntropyOptions, setBEntropyOptions] = useState([]);
   const [piTypeOptions, setPiTypeOptions] = useState([]);
   
-  // Load all model data
+  // Process raw data when it loads
   useEffect(() => {
-    const loadData = async () => {
-      try {
-        setLoading(true);
-        const allData = {};
-        
-        // Load each model file
-        for (const model of models) {
-          try {
-            // Using fetch instead of window.fs.readFile
-            const response = await fetchCSVFile(model.file);
-            
-            Papa.parse(response, {
-              header: true,
-              dynamicTyping: true,
-              skipEmptyLines: true,
-              complete: (results) => {
-                // Process the data
-                const data = results.data.map(row => {
-                  // Parse matrices and vectors
-                  const A = parseStringArray(row.A);
-                  const B = parseStringArray(row.B);
-                  const pi = parseStringArray(row.pi);
-                  
-                  // Calculate entropy and categorize
-                  const aEntropy = calculateMatrixEntropy(A);
-                  const bEntropy = calculateMatrixEntropy(B);
-                  const piType = getPiType(pi);
-                  
-                  return {
-                    ...row,
-                    aEntropy,
-                    bEntropy,
-                    aEntropyCategory: getEntropyCategory(aEntropy),
-                    bEntropyCategory: getEntropyCategory(bEntropy),
-                    piType
-                  };
-                });
-                
-                allData[model.id] = data;
-                
-                // If all models are loaded, update the state
-                if (Object.keys(allData).length === models.length) {
-                  setRawData(allData);
-                  
-                  // Extract unique filter options from the first model (they should be the same across models)
-                  const firstModelData = allData[models[0].id];
-                  
-                  if (firstModelData && firstModelData.length > 0) {
-                    const states = [...new Set(firstModelData.map(d => d.num_states))].sort((a, b) => a - b);
-                    const observations = [...new Set(firstModelData.map(d => d.num_observations))].sort((a, b) => a - b);
-                    const aEntropies = [...new Set(firstModelData.map(d => d.aEntropyCategory))].sort();
-                    const bEntropies = [...new Set(firstModelData.map(d => d.bEntropyCategory))].sort();
-                    const piTypes = [...new Set(firstModelData.map(d => d.piType))];
-                    
-                    setStateOptions(states);
-                    setObservationOptions(observations);
-                    setAEntropyOptions(aEntropies);
-                    setBEntropyOptions(bEntropies);
-                    setPiTypeOptions(piTypes);
-                    
-                    // Initialize selections with first values
-                    setSelectedState(states[0]);
-                    setSelectedObservation(observations[0]);
-                    setSelectedAEntropy(aEntropies[0]);
-                    setSelectedBEntropy(bEntropies[0]);
-                    setSelectedPiType(piTypes[0]);
-                  }
-                  
-                  setLoading(false);
-                }
-              },
-              error: (error) => {
-                console.error(`Error parsing CSV for ${model.id}: ${error.message}`);
-                setError(`Error parsing CSV for ${model.id}: ${error.message}`);
-              }
-            });
-          } catch (err) {
-            console.error(`Error loading ${model.file}: ${err.message}`);
-            setError(`Error loading ${model.file}: ${err.message}`);
-          }
-        }
-      } catch (err) {
-        setError(`Error loading data: ${err.message}`);
-        setLoading(false);
+    if (Object.keys(rawCSVData).length === 0) return;
+
+    try {
+      // Process data for each model
+      const processedRawData = {};
+
+      Object.entries(rawCSVData).forEach(([modelId, data]) => {
+        processedRawData[modelId] = data.map(row => {
+          // Parse matrices and vectors
+          const A = parseStringArray(row.A);
+          const B = parseStringArray(row.B);
+          const pi = parseStringArray(row.pi);
+
+          // Calculate entropy and categorize
+          const aEntropy = calculateMatrixEntropy(A);
+          const bEntropy = calculateMatrixEntropy(B);
+          const piType = getPiType(pi);
+
+          return {
+            ...row,
+            aEntropy,
+            bEntropy,
+            aEntropyCategory: getEntropyCategory(aEntropy),
+            bEntropyCategory: getEntropyCategory(bEntropy),
+            piType
+          };
+        });
+      });
+
+      // Extract unique filter options from the first model
+      const firstModelData = processedRawData[models[0].id];
+
+      if (firstModelData && firstModelData.length > 0) {
+        const states = getUniqueValues(firstModelData, d => d.num_states);
+        const observations = getUniqueValues(firstModelData, d => d.num_observations);
+        const aEntropies = getUniqueValues(firstModelData, d => d.aEntropyCategory);
+        const bEntropies = getUniqueValues(firstModelData, d => d.bEntropyCategory);
+        const piTypes = getUniqueValues(firstModelData, d => d.piType);
+
+        setStateOptions(states);
+        setObservationOptions(observations);
+        setAEntropyOptions(aEntropies);
+        setBEntropyOptions(bEntropies);
+        setPiTypeOptions(piTypes);
+
+        // Initialize selections with first values
+        setSelectedState(states[0]);
+        setSelectedObservation(observations[0]);
+        setSelectedAEntropy(aEntropies[0]);
+        setSelectedBEntropy(bEntropies[0]);
+        setSelectedPiType(piTypes[0]);
       }
-    };
-    
-    loadData();
-  }, []);
+
+      // Update raw data with processed version
+      setRawData(processedRawData);
+    } catch (err) {
+      console.error('Error processing data:', err);
+    }
+  }, [rawCSVData]);
   
   // Process filtered data for visualization when filters or selections change
   useEffect(() => {
@@ -288,24 +161,19 @@ const MultiModelHMMDashboard = () => {
           filtered.forEach(row => {
             if (metric === 'random_emission') {
               // Random metrics are single values, not arrays
-              if (row[fieldName] !== undefined && !isNaN(row[fieldName])) {
+              if (row[fieldName] !== undefined && isValidNumber(row[fieldName])) {
                 sum += row[fieldName];
                 count++;
               }
             } else {
               // Other metrics are arrays
-              try {
-                const values = parseStringArray(row[fieldName]);
-                if (values && values.length > idx) {
-                  // Skip NaN, inf, etc.
-                  const val = values[idx];
-                  if (!isNaN(val) && isFinite(val)) {
-                    sum += val;
-                    count++;
-                  }
+              const values = parseStringArray(row[fieldName]);
+              if (Array.isArray(values)) {
+                const val = safeArrayAccess(values, idx);
+                if (val !== null && isValidNumber(val)) {
+                  sum += val;
+                  count++;
                 }
-              } catch (e) {
-                // Silently ignore parsing errors
               }
             }
           });
@@ -343,24 +211,19 @@ const MultiModelHMMDashboard = () => {
           filtered.forEach(row => {
             if (metric === 'random_emission') {
               // Random metrics are single values, not arrays
-              if (row[fieldName] !== undefined && !isNaN(row[fieldName])) {
+              if (row[fieldName] !== undefined && isValidNumber(row[fieldName])) {
                 sum += row[fieldName];
                 count++;
               }
             } else {
               // Other metrics are arrays
-              try {
-                const values = parseStringArray(row[fieldName]);
-                if (values && values.length > idx) {
-                  // Skip NaN, inf, etc.
-                  const val = values[idx];
-                  if (!isNaN(val) && isFinite(val)) {
-                    sum += val;
-                    count++;
-                  }
+              const values = parseStringArray(row[fieldName]);
+              if (Array.isArray(values)) {
+                const val = safeArrayAccess(values, idx);
+                if (val !== null && isValidNumber(val)) {
+                  sum += val;
+                  count++;
                 }
-              } catch (e) {
-                // Silently ignore parsing errors
               }
             }
           });
@@ -447,11 +310,24 @@ const MultiModelHMMDashboard = () => {
   };
   
   if (loading) {
-    return <div className="loading-message">Loading data from multiple models...</div>;
+    return (
+      <LoadingSpinner
+        message="Loading data from multiple models..."
+        size="large"
+      />
+    );
   }
-  
+
   if (error) {
-    return <div className="error-message">{error}</div>;
+    return (
+      <ErrorMessage
+        error={error}
+        title="Failed to Load Model Data"
+        variant="critical"
+        showRetry={true}
+        onRetry={() => window.location.reload()}
+      />
+    );
   }
   
   return (
@@ -694,9 +570,12 @@ const MultiModelHMMDashboard = () => {
             </ResponsiveContainer>
           </div>
         ) : (
-          <div className="no-data-message">
-            No data available with the current filters
-          </div>
+          <ErrorMessage
+            error="No data available with the current filter configuration. Please try adjusting your filter settings."
+            title="No Data Found"
+            variant="warning"
+            showRetry={false}
+          />
         )}
       </div>
       

@@ -223,7 +223,7 @@ const GeneralLambda = () => {
     };
     
     fetchData();
-  }, []);
+  }, [metrics, sequenceLengths]);
   
   // Update current data based on selected configuration
   useEffect(() => {
