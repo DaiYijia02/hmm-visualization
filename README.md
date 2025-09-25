@@ -2,23 +2,42 @@
 
 An interactive dashboard for analyzing Hidden Markov Model (HMM) performance across different language models and experimental configurations.
 
-## Features
+## 🎯 HMM Analysis Dashboard
 
-- **Multi-Model Analysis**: Compare performance across different language model sizes and architectures
-- **Interactive Filtering**: Filter by model parameters like states, observations, entropy levels
-- **Multiple Visualizations**: Specialized dashboards for different aspects of HMM analysis
-- **Responsive Design**: Works on desktop and mobile devices
-- **Navigation System**: Easy-to-use dashboard navigation
-- **Error Handling**: Robust error handling and loading states
+The **HMM Analysis Dashboard** provides a unified, category-based interface for exploring all HMM research data with dynamic filtering capabilities:
 
-## Available Dashboards
+### Research Categories
 
-1. **Multi-Model Analysis** - Compare multiple HMM models side by side
-2. **Extended Analysis** - Advanced HMM analysis with extended parameters
-3. **HMM 320/327 Analysis** - Dataset-specific analysis dashboards
-4. **Entropy Analysis** - Visualization of entropy characteristics
-5. **Lambda Analysis** - Lambda2 eigenvalue analysis for mixing times
-6. **Steady State Analysis** - Equilibrium distribution analysis
+1. **Lambda2 Analysis** - Second eigenvalue analysis for mixing time studies
+2. **Entropy Analysis** - Matrix entropy analysis for transition and emission matrices
+3. **Steady State Analysis** - Equilibrium distribution analysis
+4. **LLM Tokenization** - LLM tokenization analysis with 4-state 4-emission configuration
+5. **Large State Analysis** - Analysis with large state spaces (early experiments)
+6. **2-State Analysis** - Analysis with 2-emission configurations
+
+### Key Features
+
+- **Category-First Approach**: Select research category first, then available variables update dynamically
+- **Smart Filtering**: Variable options automatically update based on data availability
+- **Dynamic Model Selection**: Choose between model comparison or metric comparison modes
+- **Unified Data Loading**: Handles both single files and directory-based datasets
+- **Interactive Visualizations**: Professional charts with logarithmic scaling and responsive design
+
+### Data Organization
+
+The dashboard intelligently handles different data structures:
+- **Single Files**: `lambda2_results.csv`, `entropy_results.csv`, `steady_state_results.csv`
+- **Individual Model Files**: Specific tokenization and analysis files
+- **Directory Collections**: Multiple files aggregated for large state and 2-state analyses
+
+## Quick Start
+
+Run the application in development mode:
+```bash
+npm start
+```
+
+Navigate to [http://localhost:3000](http://localhost:3000) to access the dashboard.
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
