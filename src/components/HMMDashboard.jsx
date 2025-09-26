@@ -3,7 +3,7 @@ import Papa from 'papaparse';
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, LineChart, Line, Legend } from 'recharts';
 import './HMMDashboard.css';
 
-const HMMDashboard = () => {
+const HMMDashboard = ({ showExperimental = false }) => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -35,12 +35,17 @@ const HMMDashboard = () => {
   const [filteredData, setFilteredData] = useState([]);
 
   // Topic definitions
-  const topics = [
+  const baseTopics = [
     { key: 'entropy', label: 'Entropy Analysis', file: 'entropy_results.csv' },
     { key: 'lambda2', label: 'Mixing Rate (Lambda2)', file: 'lambda2_results.csv' },
-    { key: 'steady_state', label: 'Steady State Analysis', file: 'steady_state_results.csv' },
+    { key: 'steady_state', label: 'Steady State Analysis', file: 'steady_state_results.csv' }
+  ];
+
+  const experimentalTopics = [
     { key: 'trained_models', label: 'Trained Models', file: null, isUploadable: true }
   ];
+
+  const topics = showExperimental ? [...baseTopics, ...experimentalTopics] : baseTopics;
 
   // HMM Parameter definitions (keys that determine HMM configuration)
   const getHMMParamKeys = () => {

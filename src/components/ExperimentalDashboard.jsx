@@ -9,7 +9,7 @@ const ExperimentalDashboard = () => {
         <h1>🧪 Experimental HMM Dashboard</h1>
         <p>Latest features and experimental visualizations for HMM analysis</p>
       </div>
-      <HMMDashboard />
+      <HMMDashboard showExperimental={true} />
     </div>
   );
 };
