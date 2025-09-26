@@ -35,17 +35,11 @@ const HMMDashboard = ({ showExperimental = false }) => {
   const [filteredData, setFilteredData] = useState([]);
 
   // Topic definitions
-  const baseTopics = [
+  const topics = [
     { key: 'entropy', label: 'Entropy Analysis', file: 'entropy_results.csv' },
     { key: 'lambda2', label: 'Mixing Rate (Lambda2)', file: 'lambda2_results.csv' },
     { key: 'steady_state', label: 'Steady State Analysis', file: 'steady_state_results.csv' }
   ];
-
-  const experimentalTopics = [
-    { key: 'trained_models', label: 'Trained Models', file: null, isUploadable: true }
-  ];
-
-  const topics = showExperimental ? [...baseTopics, ...experimentalTopics] : baseTopics;
 
   // HMM Parameter definitions (keys that determine HMM configuration)
   const getHMMParamKeys = () => {
@@ -55,7 +49,7 @@ const HMMDashboard = ({ showExperimental = false }) => {
     if (selectedTopic === 'lambda2') {
       return ['num_state', 'num_observation', 'lambda2', 'B_entropy'];
     }
-    if (selectedTopic === 'entropy' || selectedTopic === 'trained_models') {
+    if (selectedTopic === 'entropy') {
       return ['num_state', 'num_observation', 'A_entropy', 'B_entropy'];
     }
     return ['num_state', 'num_observation', 'lambda2', 'A_entropy', 'B_entropy'];
@@ -65,29 +59,8 @@ const HMMDashboard = ({ showExperimental = false }) => {
 
   // Function to get model columns based on selected topic
   const getModelColumns = () => {
-    if (selectedTopic === 'trained_models') {
-      // Trained models section - include your transformer plus baseline models for comparison
-      return [
-        // Your trained transformer model
-        { key: 'transformer_emission', label: 'Transformer (Trained)', group: 'TRAINED MODELS' },
-
-        // Baseline models for comparison
-        { key: 'viterbi', label: 'Viterbi', group: 'TRADITIONAL' },
-        { key: 'bw', label: 'Baum-Welch', group: 'TRADITIONAL' },
-
-        // LLM baselines for comparison
-        { key: 'llm_qwen_7b', label: 'Qwen 7B', group: 'LLM BASELINES' },
-        { key: 'llm_qwen_1_5b', label: 'Qwen 1.5B', group: 'LLM BASELINES' },
-        { key: 'llm_qwen_0_5b', label: 'Qwen 0.5B', group: 'LLM BASELINES' },
-
-        // N-gram baselines
-        { key: '2-gram', label: '2-gram', group: 'N-GRAM BASELINES' },
-        { key: '3-gram', label: '3-gram', group: 'N-GRAM BASELINES' }
-      ];
-    }
-
-    // Default columns for other topics
-    return [
+    // Base columns for all topics
+    const baseColumns = [
       // LLM Models - Ordered by preference: Qwen 7B → 3B → 1.5B → 0.5B, then Llama 8B → 3B → 1B
       { key: 'llm_qwen_7b', label: 'Qwen 7B', group: 'LLM Models' },
       { key: 'llm_qwen_3b', label: 'Qwen 3B', group: 'LLM Models' },
@@ -115,6 +88,18 @@ const HMMDashboard = ({ showExperimental = false }) => {
       { key: 'p_o_t_given_prev_4_o', label: 'P(o_t|prev_4_o)', group: 'GROUND TRUTH' },
       { key: 'p_o_t_given_prev_all_o', label: 'P(o_t|all_prev_o)', group: 'GROUND TRUTH' }
     ];
+
+    // Add custom uploaded model for current topic if available
+    if (showExperimental && uploadedModels[selectedTopic]) {
+      const customModel = uploadedModels[selectedTopic];
+      // Add custom model at the beginning with a special group
+      return [
+        { key: 'custom_model', label: customModel.name || 'Custom Model', group: 'CUSTOM MODEL' },
+        ...baseColumns
+      ];
+    }
+
+    return baseColumns;
   };
 
   const modelColumns = getModelColumns();
@@ -136,17 +121,21 @@ const HMMDashboard = ({ showExperimental = false }) => {
   const [selectedMetric, setSelectedMetric] = useState('acc');
   // Function to get default selected models based on topic
   const getDefaultSelectedModels = (topic) => {
-    if (topic === 'trained_models') {
-      return new Set(['transformer_emission', 'viterbi', 'bw', 'llm_qwen_7b']);
+    const baseModels = new Set(['llm_qwen_7b', 'viterbi', 'bw', '2-gram']);
+
+    // If there's a custom model for this topic, include it by default
+    if (showExperimental && uploadedModels[topic]) {
+      baseModels.add('custom_model');
     }
-    return new Set(['llm_qwen_7b', 'viterbi', 'bw', '2-gram']);
+
+    return baseModels;
   };
 
   const [selectedModels, setSelectedModels] = useState(getDefaultSelectedModels(selectedTopic));
   const [shouldAnimate, setShouldAnimate] = useState(true);
   const [yAxisDomain, setYAxisDomain] = useState([0, 1]);
   const [isFixedRange, setIsFixedRange] = useState(true);
-  const [uploadedData, setUploadedData] = useState(null);
+  const [uploadedModels, setUploadedModels] = useState({}); // { entropy: {name, data}, lambda2: {name, data}, steady_state: {name, data} }
   const [uploadFileName, setUploadFileName] = useState(null);
 
   // Handler for topic change
@@ -325,12 +314,66 @@ const HMMDashboard = ({ showExperimental = false }) => {
     return averaged;
   };
 
-  // File upload handler for trained models
+  // Process custom model data to standardize column names and flatten nested arrays
+  const processCustomModelData = (customData) => {
+    console.log('Processing custom model data...');
+
+    return customData.map(row => {
+      const processedRow = { ...row };
+
+      // Find all metric columns for the custom model
+      // They should be named like: custom_model_acc, custom_model_prob, etc.
+      // Or they could be named differently - we need to detect and rename them
+
+      // Look for columns that might contain metrics
+      const metricKeys = ['acc', 'prob', 'reverse_kl', 'forward_kl', 'hellinger_distance'];
+      Object.keys(row).forEach(key => {
+        metricKeys.forEach(metric => {
+          // If this column contains metric data and isn't already a baseline model column
+          if (key.includes(metric) && !key.startsWith('llm_') && !key.startsWith('viterbi') &&
+              !key.startsWith('bw') && !key.startsWith('p_o_') && !key.match(/^\d+-gram/)) {
+
+            // Check if the value is a nested array and flatten it
+            let value = row[key];
+            if (typeof value === 'string' && value.startsWith('[[')) {
+              try {
+                const parsed = JSON.parse(value.replace(/'/g, '"'));
+                if (Array.isArray(parsed) && parsed.length > 0 && Array.isArray(parsed[0])) {
+                  // Flatten nested array by averaging
+                  const numSequences = parsed[0].length;
+                  const flattenedArray = [];
+                  for (let i = 0; i < numSequences; i++) {
+                    const valuesAtPosition = parsed.map(run => run[i]).filter(v => !isNaN(v) && isFinite(v));
+                    if (valuesAtPosition.length > 0) {
+                      flattenedArray[i] = valuesAtPosition.reduce((sum, v) => sum + v, 0) / valuesAtPosition.length;
+                    }
+                  }
+                  value = JSON.stringify(flattenedArray);
+                }
+              } catch (e) {
+                console.error('Error parsing nested array:', e);
+              }
+            }
+
+            // Store as custom_model_[metric]
+            processedRow[`custom_model_${metric}`] = value;
+            console.log(`Mapped ${key} -> custom_model_${metric}`);
+          }
+        });
+      });
+
+      return processedRow;
+    });
+  };
+
+  // File upload handler for custom models
   const handleFileUpload = (event) => {
     const file = event.target.files[0];
     if (!file) return;
 
+    const modelName = file.name.replace('.csv', '');
     setUploadFileName(file.name);
+
     const reader = new FileReader();
     reader.onload = (e) => {
       const csvText = e.target.result;
@@ -343,9 +386,17 @@ const HMMDashboard = ({ showExperimental = false }) => {
           console.log(`Uploaded ${cleanData.length} rows from ${file.name}`);
           console.log('Sample uploaded row:', cleanData[0]);
 
-          setUploadedData(cleanData);
-          // Trigger reload to merge with baseline data
-          loadData('trained_models');
+          // Process and merge with baseline data
+          const processedData = processCustomModelData(cleanData);
+
+          // Store uploaded model data for current topic
+          setUploadedModels(prev => ({
+            ...prev,
+            [selectedTopic]: { name: modelName, data: processedData }
+          }));
+
+          // Reload data to include the custom model
+          loadData(selectedTopic);
         },
         error: (error) => {
           console.error('Error parsing uploaded CSV:', error);
@@ -361,83 +412,7 @@ const HMMDashboard = ({ showExperimental = false }) => {
     setLoading(true);
     console.log(`Loading data for topic: ${topic}`);
 
-    // Handle trained models - merge with baseline data for comparison
-    if (topic === 'trained_models') {
-      let trainedData = uploadedData;
-
-      // If no uploaded data, try to load default trained file
-      if (!trainedData) {
-        try {
-          const response = await fetch(`/hmm-visualization/data/trained/transformer_11111_4_entropy_64.csv`);
-          if (response.ok) {
-            const csvText = await response.text();
-            await new Promise((resolve, reject) => {
-              Papa.parse(csvText, {
-                header: true,
-                quoteChar: '"',
-                skipEmptyLines: true,
-                complete: (results) => {
-                  trainedData = results.data.filter(row => row.num_state && row.num_state.trim() !== '');
-                  console.log(`Loaded default trained data: ${trainedData.length} rows`);
-                  resolve();
-                },
-                error: reject
-              });
-            });
-          }
-        } catch (error) {
-          console.log('No default trained data found');
-        }
-      }
-
-      if (!trainedData || trainedData.length === 0) {
-        // No trained data - show upload interface
-        setData([]);
-        setLoading(false);
-        return;
-      }
-
-      // Load baseline entropy data for comparison
-      try {
-        const baselineResponse = await fetch(`/hmm-visualization/data/paper/entropy_results.csv`);
-        if (baselineResponse.ok) {
-          const baselineCsvText = await baselineResponse.text();
-          Papa.parse(baselineCsvText, {
-            header: true,
-            quoteChar: '"',
-            skipEmptyLines: true,
-            complete: (results) => {
-              const baselineData = results.data.filter(row => row.num_state && row.num_state.trim() !== '');
-              console.log(`Loaded baseline data: ${baselineData.length} rows`);
-
-              // Merge trained data with matching baseline data
-              const mergedData = mergeTrainedWithBaseline(trainedData, baselineData);
-              console.log(`Merged data: ${mergedData.length} rows`);
-
-              setData(mergedData);
-              analyzeParameters(mergedData);
-              setLoading(false);
-            },
-            error: (error) => {
-              console.error('Error loading baseline data:', error);
-              // Fall back to just trained data
-              setData(trainedData);
-              analyzeParameters(trainedData);
-              setLoading(false);
-            }
-          });
-        }
-      } catch (error) {
-        console.error('Error loading baseline data:', error);
-        // Fall back to just trained data
-        setData(trainedData);
-        analyzeParameters(trainedData);
-        setLoading(false);
-      }
-      return;
-    }
-
-    // Handle other topics normally
+    // Load baseline data for the topic
     try {
       const topicConfig = topics.find(t => t.key === topic);
       const response = await fetch(`/hmm-visualization/data/paper/${topicConfig.file}`);
@@ -454,10 +429,38 @@ const HMMDashboard = ({ showExperimental = false }) => {
         quoteChar: '"',
         skipEmptyLines: true,
         complete: (results) => {
-          const cleanData = results.data.filter(row => row.num_state && row.num_state.trim() !== '');
+          let cleanData = results.data.filter(row => row.num_state && row.num_state.trim() !== '');
           console.log(`Parsed ${cleanData.length} rows for ${topic}`);
           console.log('Sample row:', cleanData[0]);
           console.log('Available columns:', Object.keys(cleanData[0] || {}));
+
+          // If there's custom model data for this topic, merge it with baseline data
+          if (uploadedModels[topic]) {
+            console.log('Merging custom model data with baseline...');
+            const customData = uploadedModels[topic].data;
+
+            // Merge custom model columns into baseline data by matching HMM parameters
+            cleanData = cleanData.map(baselineRow => {
+              // Find matching row in custom data
+              const matchingCustomRow = customData.find(customRow => {
+                return (
+                  parseFloat(customRow.num_state) === parseFloat(baselineRow.num_state) &&
+                  parseFloat(customRow.num_observation) === parseFloat(baselineRow.num_observation) &&
+                  Math.abs(parseFloat(customRow.A_entropy || 0) - parseFloat(baselineRow.A_entropy || 0)) < 0.05 &&
+                  Math.abs(parseFloat(customRow.B_entropy || 0) - parseFloat(baselineRow.B_entropy || 0)) < 0.05
+                );
+              });
+
+              if (matchingCustomRow) {
+                // Merge custom model columns into baseline row
+                return { ...baselineRow, ...matchingCustomRow };
+              }
+
+              return baselineRow;
+            });
+
+            console.log(`Merged custom model data. Sample row:`, cleanData[0]);
+          }
 
           setData(cleanData);
           analyzeParameters(cleanData);
@@ -1113,24 +1116,24 @@ const HMMDashboard = ({ showExperimental = false }) => {
       <div className="hmm-parameters">
         <h3>HMM Configuration</h3>
 
-        {/* File upload for trained models */}
-        {selectedTopic === 'trained_models' && (
+        {/* File upload for custom models (experimental mode only) */}
+        {showExperimental && (
           <div className="file-upload-section">
-            <label className="parameter-label">UPLOAD TRAINED MODEL DATA</label>
+            <label className="parameter-label">ADD CUSTOM MODEL TO {selectedTopic.toUpperCase().replace('_', ' ')}</label>
             <div className="file-upload-container">
               <input
                 type="file"
                 accept=".csv"
                 onChange={handleFileUpload}
                 className="file-upload-input"
-                id="trained-model-upload"
+                id="custom-model-upload"
               />
-              <label htmlFor="trained-model-upload" className="file-upload-label">
+              <label htmlFor="custom-model-upload" className="file-upload-label">
                 📁 Choose CSV file
               </label>
-              {uploadFileName && (
+              {uploadedModels[selectedTopic] && (
                 <div className="file-upload-status">
-                  ✅ Loaded: {uploadFileName}
+                  ✅ Loaded: {uploadedModels[selectedTopic].name}
                 </div>
               )}
             </div>
@@ -1299,8 +1302,8 @@ const HMMDashboard = ({ showExperimental = false }) => {
 
   // Beautiful color theme with cold/warm tone separation
   const modelColors = {
-    // Trained transformer model - Special highlight color
-    'transformer_emission': '#dc2626', // Bright red for prominence
+    // Custom uploaded model - Special highlight color
+    'custom_model': '#dc2626', // Bright red for prominence
 
     // Qwen Models - Blue/Purple palette
     'llm_qwen_7b': '#1e40af',      // Deep blue (largest)
