@@ -38,7 +38,8 @@ const HMMDashboard = () => {
   const topics = [
     { key: 'entropy', label: 'Entropy Analysis', file: 'entropy_results.csv' },
     { key: 'lambda2', label: 'Mixing Rate (Lambda2)', file: 'lambda2_results.csv' },
-    { key: 'steady_state', label: 'Steady State Analysis', file: 'steady_state_results.csv' }
+    { key: 'steady_state', label: 'Steady State Analysis', file: 'steady_state_results.csv' },
+    { key: 'trained_models', label: 'Trained Models', file: null, isUploadable: true }
   ];
 
   // HMM Parameter definitions (keys that determine HMM configuration)
@@ -49,7 +50,7 @@ const HMMDashboard = () => {
     if (selectedTopic === 'lambda2') {
       return ['num_state', 'num_observation', 'lambda2', 'B_entropy'];
     }
-    if (selectedTopic === 'entropy') {
+    if (selectedTopic === 'entropy' || selectedTopic === 'trained_models') {
       return ['num_state', 'num_observation', 'A_entropy', 'B_entropy'];
     }
     return ['num_state', 'num_observation', 'lambda2', 'A_entropy', 'B_entropy'];
@@ -57,52 +58,381 @@ const HMMDashboard = () => {
 
   const hmmParamKeys = getHMMParamKeys();
 
-  // Model result columns
-  const modelColumns = [
-    // LLM Models - Ordered by preference: Qwen 7B → 3B → 1.5B → 0.5B, then Llama 8B → 3B → 1B
-    { key: 'llm_qwen_7b', label: 'Qwen 7B', group: 'LLM Models' },
-    { key: 'llm_qwen_3b', label: 'Qwen 3B', group: 'LLM Models' },
-    { key: 'llm_qwen_1_5b', label: 'Qwen 1.5B', group: 'LLM Models' },
-    { key: 'llm_qwen_0_5b', label: 'Qwen 0.5B', group: 'LLM Models' },
-    { key: 'llm_llama_8b', label: 'Llama 8B', group: 'LLM Models' },
-    { key: 'llm_llama_3b', label: 'Llama 3B', group: 'LLM Models' },
-    { key: 'llm_llama_1b', label: 'Llama 1B', group: 'LLM Models' },
+  // Function to get model columns based on selected topic
+  const getModelColumns = () => {
+    if (selectedTopic === 'trained_models') {
+      // Trained models section - include your transformer plus baseline models for comparison
+      return [
+        // Your trained transformer model
+        { key: 'transformer_emission', label: 'Transformer (Trained)', group: 'TRAINED MODELS' },
 
-    // HMM Methods (moved to second position)
-    { key: 'viterbi', label: 'Viterbi', group: 'HMM Methods' },
-    { key: 'bw', label: 'Baum-Welch', group: 'HMM Methods' },
+        // Baseline models for comparison
+        { key: 'viterbi', label: 'Viterbi', group: 'TRADITIONAL' },
+        { key: 'bw', label: 'Baum-Welch', group: 'TRADITIONAL' },
 
-    // N-gram Models
-    { key: '1-gram', label: '1-gram', group: 'N-gram Models' },
-    { key: '2-gram', label: '2-gram', group: 'N-gram Models' },
-    { key: '3-gram', label: '3-gram', group: 'N-gram Models' },
-    { key: '4-gram', label: '4-gram', group: 'N-gram Models' },
+        // LLM baselines for comparison
+        { key: 'llm_qwen_7b', label: 'Qwen 7B', group: 'LLM BASELINES' },
+        { key: 'llm_qwen_1_5b', label: 'Qwen 1.5B', group: 'LLM BASELINES' },
+        { key: 'llm_qwen_0_5b', label: 'Qwen 0.5B', group: 'LLM BASELINES' },
 
-    // Conditional Probability Models
-    { key: 'p_o_given_prev_h', label: 'P(o|prev_h)', group: 'Conditional Models' },
-    { key: 'p_o_t_given_prev_1_o', label: 'P(o_t|prev_1_o)', group: 'Conditional Models' },
-    { key: 'p_o_t_given_prev_2_o', label: 'P(o_t|prev_2_o)', group: 'Conditional Models' },
-    { key: 'p_o_t_given_prev_3_o', label: 'P(o_t|prev_3_o)', group: 'Conditional Models' },
-    { key: 'p_o_t_given_prev_4_o', label: 'P(o_t|prev_4_o)', group: 'Conditional Models' },
-    { key: 'p_o_t_given_prev_all_o', label: 'P(o_t|all_prev_o)', group: 'Conditional Models' }
-  ];
+        // N-gram baselines
+        { key: '2-gram', label: '2-gram', group: 'N-GRAM BASELINES' },
+        { key: '3-gram', label: '3-gram', group: 'N-GRAM BASELINES' }
+      ];
+    }
 
-  // Metric types
-  const metricTypes = [
-    { key: 'acc', label: 'Accuracy' },
-    { key: 'prob', label: 'Probability' },
-    { key: 'reverse_kl', label: 'Reverse KL Divergence' },
-    { key: 'forward_kl', label: 'Forward KL Divergence' },
-    { key: 'hellinger_distance', label: 'Hellinger Distance' }
-  ];
+    // Default columns for other topics
+    return [
+      // LLM Models - Ordered by preference: Qwen 7B → 3B → 1.5B → 0.5B, then Llama 8B → 3B → 1B
+      { key: 'llm_qwen_7b', label: 'Qwen 7B', group: 'LLM Models' },
+      { key: 'llm_qwen_3b', label: 'Qwen 3B', group: 'LLM Models' },
+      { key: 'llm_qwen_1_5b', label: 'Qwen 1.5B', group: 'LLM Models' },
+      { key: 'llm_qwen_0_5b', label: 'Qwen 0.5B', group: 'LLM Models' },
+      { key: 'llm_llama_8b', label: 'Llama 8B', group: 'LLM Models' },
+      { key: 'llm_llama_3b', label: 'Llama 3B', group: 'LLM Models' },
+      { key: 'llm_llama_1b', label: 'Llama 1B', group: 'LLM Models' },
+
+      // HMM Methods (moved to second position)
+      { key: 'viterbi', label: 'Viterbi', group: 'TRADITIONAL' },
+      { key: 'bw', label: 'Baum-Welch', group: 'TRADITIONAL' },
+
+      // N-gram Models
+      { key: '1-gram', label: '1-gram', group: 'N-GRAM' },
+      { key: '2-gram', label: '2-gram', group: 'N-GRAM' },
+      { key: '3-gram', label: '3-gram', group: 'N-GRAM' },
+      { key: '4-gram', label: '4-gram', group: 'N-GRAM' },
+
+      // Conditional Probability Models
+      { key: 'p_o_given_prev_h', label: 'P(o|prev_h)', group: 'GROUND TRUTH' },
+      { key: 'p_o_t_given_prev_1_o', label: 'P(o_t|prev_1_o)', group: 'GROUND TRUTH' },
+      { key: 'p_o_t_given_prev_2_o', label: 'P(o_t|prev_2_o)', group: 'GROUND TRUTH' },
+      { key: 'p_o_t_given_prev_3_o', label: 'P(o_t|prev_3_o)', group: 'GROUND TRUTH' },
+      { key: 'p_o_t_given_prev_4_o', label: 'P(o_t|prev_4_o)', group: 'GROUND TRUTH' },
+      { key: 'p_o_t_given_prev_all_o', label: 'P(o_t|all_prev_o)', group: 'GROUND TRUTH' }
+    ];
+  };
+
+  const modelColumns = getModelColumns();
+
+  // Function to get metric types based on selected topic
+  const getMetricTypes = () => {
+    // All topics have the same metrics available
+    return [
+      { key: 'acc', label: 'Accuracy' },
+      { key: 'prob', label: 'Probability' },
+      { key: 'reverse_kl', label: 'Reverse KL Divergence' },
+      { key: 'forward_kl', label: 'Forward KL Divergence' },
+      { key: 'hellinger_distance', label: 'Hellinger Distance' }
+    ];
+  };
+
+  const metricTypes = getMetricTypes();
 
   const [selectedMetric, setSelectedMetric] = useState('acc');
-  const [selectedModels, setSelectedModels] = useState(new Set(['llm_qwen_7b', 'viterbi', 'bw', '2-gram']));
+  // Function to get default selected models based on topic
+  const getDefaultSelectedModels = (topic) => {
+    if (topic === 'trained_models') {
+      return new Set(['transformer_emission', 'viterbi', 'bw', 'llm_qwen_7b']);
+    }
+    return new Set(['llm_qwen_7b', 'viterbi', 'bw', '2-gram']);
+  };
+
+  const [selectedModels, setSelectedModels] = useState(getDefaultSelectedModels(selectedTopic));
+  const [shouldAnimate, setShouldAnimate] = useState(true);
+  const [yAxisDomain, setYAxisDomain] = useState([0, 1]);
+  const [isFixedRange, setIsFixedRange] = useState(true);
+  const [uploadedData, setUploadedData] = useState(null);
+  const [uploadFileName, setUploadFileName] = useState(null);
+
+  // Handler for topic change
+  const handleTopicChange = (topic) => {
+    setShouldAnimate(false);
+    setSelectedTopic(topic);
+    setSelectedModels(getDefaultSelectedModels(topic));
+    setTimeout(() => setShouldAnimate(true), 100);
+  };
+
+  // Merge trained data with baseline data for comparison
+  const mergeTrainedWithBaseline = (trainedData, baselineData) => {
+    console.log('Merging trained data with baseline data...');
+    const merged = [];
+
+    // Group trained data by HMM configuration to average multiple runs
+    const trainedGroups = {};
+    trainedData.forEach(trainedRow => {
+      const key = `${trainedRow.num_state}_${trainedRow.num_observation}_${trainedRow.A_entropy}_${trainedRow.B_entropy}`;
+      if (!trainedGroups[key]) {
+        trainedGroups[key] = [];
+      }
+      trainedGroups[key].push(trainedRow);
+    });
+
+    // Process each group - this creates ONE merged row per HMM configuration
+    Object.values(trainedGroups).forEach(groupRows => {
+      const firstRow = groupRows[0];
+
+      // Find matching baseline row based on HMM parameters
+      const matchingBaseline = baselineData.find(baselineRow => {
+        return (
+          parseFloat(baselineRow.num_state) === parseFloat(firstRow.num_state) &&
+          parseFloat(baselineRow.num_observation) === parseFloat(firstRow.num_observation) &&
+          Math.abs(parseFloat(baselineRow.A_entropy) - parseFloat(firstRow.A_entropy)) < 0.05 &&
+          Math.abs(parseFloat(baselineRow.B_entropy) - parseFloat(firstRow.B_entropy)) < 0.05
+        );
+      });
+
+      // Average transformer metrics across multiple runs
+      const averagedTransformerRow = averageTransformerMetrics(groupRows);
+      console.log('Averaged transformer row for group:', averagedTransformerRow);
+
+      if (matchingBaseline) {
+        // Merge the data - baseline data + averaged transformer data
+        const mergedRow = {
+          ...matchingBaseline,
+          ...averagedTransformerRow  // This will overwrite common fields with trained values, add transformer fields
+        };
+        merged.push(mergedRow);
+        console.log('Created merged row with baseline data');
+      } else {
+        // No matching baseline, use just averaged trained data
+        merged.push(averagedTransformerRow);
+        console.log('Created merged row without baseline data');
+      }
+    });
+
+    console.log(`Merged ${merged.length} rows with baseline data`);
+    console.log('Sample merged row:', merged[0]);
+    return merged;
+  };
+
+  // Average transformer metrics across multiple runs
+  const averageTransformerMetrics = (rows) => {
+    if (rows.length === 1) {
+      // Even for single row, we need to flatten nested arrays
+      const processed = { ...rows[0] };
+      const metricKeys = ['transformer_emission_acc', 'transformer_emission_prob', 'transformer_emission_reverse_kl', 'transformer_emission_forward_kl', 'transformer_emission_hellinger_distance'];
+
+      metricKeys.forEach(metricKey => {
+        const val = processed[metricKey];
+        if (typeof val === 'string' && val.startsWith('[')) {
+          try {
+            const parsed = JSON.parse(val.replace(/'/g, '"'));
+            console.log(`Single row: Processing ${metricKey}:`, parsed);
+
+            // Handle nested arrays - if this is an array of arrays, flatten by averaging each position
+            if (Array.isArray(parsed) && parsed.length > 0 && Array.isArray(parsed[0])) {
+              console.log(`Single row: Found nested array for ${metricKey}, shape: ${parsed.length} x ${parsed[0].length}`);
+              const numSequences = parsed[0].length;
+              const flattenedArray = [];
+
+              for (let seqIdx = 0; seqIdx < numSequences; seqIdx++) {
+                const valuesAtPosition = parsed.map(run => run[seqIdx]).filter(v => !isNaN(v) && isFinite(v));
+                if (valuesAtPosition.length > 0) {
+                  flattenedArray[seqIdx] = valuesAtPosition.reduce((sum, v) => sum + v, 0) / valuesAtPosition.length;
+                } else {
+                  flattenedArray[seqIdx] = null;
+                }
+              }
+
+              processed[metricKey] = JSON.stringify(flattenedArray);
+              console.log(`Single row: Flattened ${metricKey} to:`, flattenedArray.slice(0, 3), '... (length: ' + flattenedArray.length + ')');
+            }
+          } catch (e) {
+            console.error(`Single row: Error parsing ${metricKey}:`, e);
+          }
+        }
+      });
+
+      return processed;
+    }
+
+    const averaged = { ...rows[0] }; // Start with first row
+    const metricKeys = ['transformer_emission_acc', 'transformer_emission_prob', 'transformer_emission_reverse_kl', 'transformer_emission_forward_kl', 'transformer_emission_hellinger_distance'];
+
+    metricKeys.forEach(metricKey => {
+      console.log(`Processing ${metricKey} for ${rows.length} rows`);
+
+      const arrays = rows.map(row => {
+        const val = row[metricKey];
+        console.log(`Raw value for ${metricKey}:`, val);
+
+        if (typeof val === 'string' && val.startsWith('[')) {
+          try {
+            const parsed = JSON.parse(val.replace(/'/g, '"'));
+            console.log(`Parsed value for ${metricKey}:`, parsed);
+
+            // Handle nested arrays - if this is an array of arrays, flatten by averaging each position
+            if (Array.isArray(parsed) && parsed.length > 0 && Array.isArray(parsed[0])) {
+              console.log(`Found nested array for ${metricKey}, shape: ${parsed.length} x ${parsed[0].length}`);
+              // This is a 2D array (multiple runs, each with sequence length data)
+              // Average across runs for each sequence length position
+              const numSequences = parsed[0].length;
+              const flattenedArray = [];
+
+              for (let seqIdx = 0; seqIdx < numSequences; seqIdx++) {
+                const valuesAtPosition = parsed.map(run => run[seqIdx]).filter(v => !isNaN(v) && isFinite(v));
+                if (valuesAtPosition.length > 0) {
+                  flattenedArray[seqIdx] = valuesAtPosition.reduce((sum, v) => sum + v, 0) / valuesAtPosition.length;
+                } else {
+                  flattenedArray[seqIdx] = null;
+                }
+              }
+
+              console.log(`Flattened ${metricKey} from ${parsed.length} runs to single array:`, flattenedArray.slice(0, 3), '...');
+              return flattenedArray;
+            } else {
+              // Regular 1D array
+              return parsed;
+            }
+          } catch (e) {
+            console.error(`Error parsing ${metricKey}:`, e);
+            return null;
+          }
+        }
+        return null;
+      }).filter(arr => arr !== null);
+
+      if (arrays.length > 0 && arrays[0].length > 0) {
+        // If we have multiple arrays (from multiple rows), average them
+        if (arrays.length > 1) {
+          const averagedArray = [];
+          const arrayLength = arrays[0].length;
+
+          for (let i = 0; i < arrayLength; i++) {
+            const values = arrays.map(arr => arr[i]).filter(v => !isNaN(v) && isFinite(v));
+            if (values.length > 0) {
+              averagedArray[i] = values.reduce((sum, v) => sum + v, 0) / values.length;
+            } else {
+              averagedArray[i] = null;
+            }
+          }
+
+          averaged[metricKey] = JSON.stringify(averagedArray);
+          console.log(`Final averaged ${metricKey} from ${arrays.length} arrays:`, averagedArray.slice(0, 3), '... (length: ' + averagedArray.length + ')');
+        } else {
+          // Single array, just use it
+          averaged[metricKey] = JSON.stringify(arrays[0]);
+          console.log(`Used single ${metricKey} array:`, arrays[0].slice(0, 3), '... (length: ' + arrays[0].length + ')');
+        }
+      }
+    });
+
+    return averaged;
+  };
+
+  // File upload handler for trained models
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    setUploadFileName(file.name);
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const csvText = e.target.result;
+      Papa.parse(csvText, {
+        header: true,
+        quoteChar: '"',
+        skipEmptyLines: true,
+        complete: (results) => {
+          const cleanData = results.data.filter(row => row.num_state && row.num_state.trim() !== '');
+          console.log(`Uploaded ${cleanData.length} rows from ${file.name}`);
+          console.log('Sample uploaded row:', cleanData[0]);
+
+          setUploadedData(cleanData);
+          // Trigger reload to merge with baseline data
+          loadData('trained_models');
+        },
+        error: (error) => {
+          console.error('Error parsing uploaded CSV:', error);
+          setLoading(false);
+        }
+      });
+    };
+    reader.readAsText(file);
+  };
 
   // Load data for selected topic
   const loadData = async (topic) => {
     setLoading(true);
     console.log(`Loading data for topic: ${topic}`);
+
+    // Handle trained models - merge with baseline data for comparison
+    if (topic === 'trained_models') {
+      let trainedData = uploadedData;
+
+      // If no uploaded data, try to load default trained file
+      if (!trainedData) {
+        try {
+          const response = await fetch(`/hmm-visualization/data/trained/transformer_11111_4_entropy_64.csv`);
+          if (response.ok) {
+            const csvText = await response.text();
+            await new Promise((resolve, reject) => {
+              Papa.parse(csvText, {
+                header: true,
+                quoteChar: '"',
+                skipEmptyLines: true,
+                complete: (results) => {
+                  trainedData = results.data.filter(row => row.num_state && row.num_state.trim() !== '');
+                  console.log(`Loaded default trained data: ${trainedData.length} rows`);
+                  resolve();
+                },
+                error: reject
+              });
+            });
+          }
+        } catch (error) {
+          console.log('No default trained data found');
+        }
+      }
+
+      if (!trainedData || trainedData.length === 0) {
+        // No trained data - show upload interface
+        setData([]);
+        setLoading(false);
+        return;
+      }
+
+      // Load baseline entropy data for comparison
+      try {
+        const baselineResponse = await fetch(`/hmm-visualization/data/paper/entropy_results.csv`);
+        if (baselineResponse.ok) {
+          const baselineCsvText = await baselineResponse.text();
+          Papa.parse(baselineCsvText, {
+            header: true,
+            quoteChar: '"',
+            skipEmptyLines: true,
+            complete: (results) => {
+              const baselineData = results.data.filter(row => row.num_state && row.num_state.trim() !== '');
+              console.log(`Loaded baseline data: ${baselineData.length} rows`);
+
+              // Merge trained data with matching baseline data
+              const mergedData = mergeTrainedWithBaseline(trainedData, baselineData);
+              console.log(`Merged data: ${mergedData.length} rows`);
+
+              setData(mergedData);
+              analyzeParameters(mergedData);
+              setLoading(false);
+            },
+            error: (error) => {
+              console.error('Error loading baseline data:', error);
+              // Fall back to just trained data
+              setData(trainedData);
+              analyzeParameters(trainedData);
+              setLoading(false);
+            }
+          });
+        }
+      } catch (error) {
+        console.error('Error loading baseline data:', error);
+        // Fall back to just trained data
+        setData(trainedData);
+        analyzeParameters(trainedData);
+        setLoading(false);
+      }
+      return;
+    }
+
+    // Handle other topics normally
     try {
       const topicConfig = topics.find(t => t.key === topic);
       const response = await fetch(`/hmm-visualization/data/paper/${topicConfig.file}`);
@@ -116,9 +446,14 @@ const HMMDashboard = () => {
 
       Papa.parse(csvText, {
         header: true,
+        quoteChar: '"',
+        skipEmptyLines: true,
         complete: (results) => {
           const cleanData = results.data.filter(row => row.num_state && row.num_state.trim() !== '');
           console.log(`Parsed ${cleanData.length} rows for ${topic}`);
+          console.log('Sample row:', cleanData[0]);
+          console.log('Available columns:', Object.keys(cleanData[0] || {}));
+
           setData(cleanData);
           analyzeParameters(cleanData);
           setLoading(false);
@@ -136,12 +471,18 @@ const HMMDashboard = () => {
 
   // Analyze available parameter values
   const analyzeParameters = (data) => {
+    console.log('Analyzing parameters for data:', data.length, 'rows');
+    console.log('HMM param keys:', hmmParamKeys);
     const params = {};
 
     hmmParamKeys.forEach(key => {
       let values = data.map(row => {
         const val = row[key];
-        // Handle array values for steady_state
+        // Handle JavaScript array values
+        if (Array.isArray(val) && val.length > 0) {
+          return JSON.stringify(val); // Convert to string for comparison
+        }
+        // Handle string array values (backwards compatibility)
         if (typeof val === 'string' && val.startsWith('[') && val !== '[]') {
           return val; // Keep as string for now, will parse later
         }
@@ -149,8 +490,10 @@ const HMMDashboard = () => {
         return isNaN(numVal) ? val : numVal;
       }).filter(v => {
         if (v === undefined || v === null) return false;
-        // Allow string arrays (like steady_state data)
+        // Allow JavaScript arrays converted to strings
         if (typeof v === 'string' && v.startsWith('[')) return true;
+        // Allow setting values (like "Setting 1", "Setting 2", etc.)
+        if (key === 'setting' && typeof v === 'string') return true;
         // Allow valid numbers
         return !isNaN(v);
       });
@@ -183,10 +526,14 @@ const HMMDashboard = () => {
 
       params[key] = values;
 
-      console.log(`${key} parameter values:`, params[key]);
+      console.log(`${key} parameter values (${params[key].length} unique):`, params[key]);
+      if (key === 'setting') {
+        console.log('Raw setting values from data:', data.map(row => row.setting));
+      }
     });
 
     setAvailableParameters(params);
+
 
     // Check if current selection is valid for this topic's data
     const isCurrentSelectionValid = () => {
@@ -223,9 +570,17 @@ const HMMDashboard = () => {
           hmmParamKeys.forEach(key => {
             if (firstRow[key] !== undefined && firstRow[key] !== null) {
               let value = firstRow[key];
-              if (key === 'steady_state' && typeof value === 'string' && value.startsWith('[')) {
-                // Convert steady_state array to label
-                value = getSteadyStateLabel(value);
+              if (key === 'steady_state') {
+                if (Array.isArray(value)) {
+                  // Convert array to label
+                  value = getSteadyStateLabel(JSON.stringify(value));
+                } else if (typeof value === 'string' && value.startsWith('[')) {
+                  // Convert steady_state array string to label
+                  value = getSteadyStateLabel(value);
+                }
+              } else if (Array.isArray(value)) {
+                // Convert array to string for comparison
+                value = JSON.stringify(value);
               } else if (!isNaN(value) && value !== '') {
                 // Parse numeric values
                 value = parseFloat(value);
@@ -346,15 +701,29 @@ const HMMDashboard = () => {
       return;
     }
 
-    console.log('Filtering data with params:', selectedHMMParams);
-    console.log('Total rows in data:', data.length);
-    console.log('Sample row for comparison:', data[0]);
 
     const filtered = data.filter(row => {
       const matches = Object.entries(selectedHMMParams).every(([key, selectedValue]) => {
         const rowValue = row[key];
 
         // Handle array values (like steady_state)
+        if (Array.isArray(rowValue)) {
+          let match;
+          if (key === 'steady_state') {
+            // For steady_state, compare labels instead of exact arrays
+            const rowLabel = getSteadyStateLabel(JSON.stringify(rowValue));
+            match = rowLabel === selectedValue;
+          } else {
+            // For other arrays, convert to string for comparison
+            match = JSON.stringify(rowValue) === selectedValue;
+          }
+          if (!match) {
+            console.log(`Array mismatch for ${key}: row="${JSON.stringify(rowValue)}" vs selected="${selectedValue}"`);
+          }
+          return match;
+        }
+
+        // Handle string array values (backwards compatibility)
         if (typeof rowValue === 'string' && rowValue.startsWith('[')) {
           let match;
           if (key === 'steady_state') {
@@ -396,6 +765,7 @@ const HMMDashboard = () => {
     console.log('Filter criteria:', selectedHMMParams);
     if (filtered.length > 0) {
       console.log('Sample filtered row:', filtered[0]);
+      console.log('All filtered rows transformer_emission_acc:', filtered.map(row => row.transformer_emission_acc));
     }
     setFilteredData(filtered);
   }, [data, selectedHMMParams]);
@@ -412,6 +782,12 @@ const HMMDashboard = () => {
   const getVisualizationData = () => {
     if (filteredData.length === 0) return [];
 
+    console.log('=== getVisualizationData called ===');
+    console.log('filteredData length:', filteredData.length);
+    console.log('filteredData sample:', filteredData[0]);
+    console.log('selectedModels:', Array.from(selectedModels));
+    console.log('selectedMetric:', selectedMetric);
+
     // Get data for each sequence length
     return sequenceLengths.map(seqLength => {
       const dataPoint = { sequenceLength: seqLength };
@@ -427,14 +803,32 @@ const HMMDashboard = () => {
             try {
               const arr = JSON.parse(val.replace(/'/g, '"'));
               const seqIndex = sequenceLengths.indexOf(seqLength);
-              return seqIndex >= 0 && seqIndex < arr.length ? parseFloat(arr[seqIndex]) : null;
-            } catch {
+              const result = seqIndex >= 0 && seqIndex < arr.length ? parseFloat(arr[seqIndex]) : null;
+
+              // Debug transformer data processing
+              if (model.key === 'transformer_emission') {
+                console.log(`Transformer data for ${columnKey} at seq ${seqLength} (index ${seqIndex}):`, {
+                  rawVal: val,
+                  parsedArray: arr,
+                  arrayLength: arr.length,
+                  extractedValue: result
+                });
+              }
+
+              return result;
+            } catch (e) {
+              console.error(`Failed to parse array for ${columnKey}:`, val, e);
               return null;
             }
           }
           // For non-array values, only show at sequence length 2048 (last position)
           return seqLength === 2048 ? (parseFloat(val) || null) : null;
         }).filter(v => v !== null);
+
+        // Debug transformer values processing
+        if (model.key === 'transformer_emission') {
+          console.log(`Transformer values for seq ${seqLength}:`, values, 'from', filteredData.length, 'rows');
+        }
 
         // Average the values for this sequence length
         if (values.length > 0) {
@@ -448,6 +842,52 @@ const HMMDashboard = () => {
 
   const visualizationData = getVisualizationData();
 
+  // Calculate Y-axis data range for zoom functionality
+  const getDataRange = () => {
+    if (visualizationData.length === 0) return { min: 0, max: 1 };
+
+    let min = Infinity;
+    let max = -Infinity;
+
+    visualizationData.forEach(point => {
+      selectedModels.forEach(modelKey => {
+        const value = point[modelKey];
+        if (value !== undefined && value !== null && !isNaN(value)) {
+          min = Math.min(min, value);
+          max = Math.max(max, value);
+        }
+      });
+    });
+
+    if (min === Infinity || max === -Infinity) return { min: 0, max: 1 };
+    return { min, max };
+  };
+
+  // Y-axis range toggle function
+  const toggleYAxisRange = () => {
+    if (isFixedRange) {
+      // Switch to dynamic range
+      const range = getDataRange();
+      const buffer = 0.1;
+      let newMin = Math.max(0, range.min - buffer);
+      let newMax = Math.min(1, range.max + buffer);
+
+      // Ensure we have a valid range
+      if (newMax <= newMin) {
+        newMin = Math.max(0, range.min - 0.05);
+        newMax = Math.min(1, range.max + 0.05);
+      }
+
+      setYAxisDomain([newMin, newMax]);
+      setIsFixedRange(false);
+    } else {
+      // Switch back to 0-1 range
+      setYAxisDomain([0, 1]);
+      setIsFixedRange(true);
+    }
+  };
+
+
   // Calculate available options for each parameter given current selections
   const getAvailableOptionsForParameter = (targetParamKey) => {
     if (data.length === 0) return {};
@@ -457,6 +897,7 @@ const HMMDashboard = () => {
     delete partialSelection[targetParamKey];
 
     const optionCounts = {};
+
 
     // For each possible value of the target parameter
     (availableParameters[targetParamKey] || []).forEach(value => {
@@ -469,6 +910,18 @@ const HMMDashboard = () => {
           const rowValue = row[key];
 
           // Handle array values (like steady_state)
+          if (Array.isArray(rowValue)) {
+            if (key === 'steady_state') {
+              // For steady_state, compare labels instead of exact arrays
+              const rowLabel = getSteadyStateLabel(JSON.stringify(rowValue));
+              return rowLabel === selectedValue;
+            } else {
+              // For other arrays, convert to string for comparison
+              return JSON.stringify(rowValue) === selectedValue;
+            }
+          }
+
+          // Handle string array values (backwards compatibility)
           if (typeof rowValue === 'string' && rowValue.startsWith('[')) {
             if (key === 'steady_state') {
               // For steady_state, compare labels instead of exact arrays
@@ -498,6 +951,12 @@ const HMMDashboard = () => {
             const columnKey = `${model.key}_${metricType.key}`;
             const val = row[columnKey];
 
+            // Handle JavaScript arrays
+            if (Array.isArray(val)) {
+              return val.some(v => !isNaN(v) && isFinite(v));
+            }
+
+            // Handle string arrays (backwards compatibility)
             if (typeof val === 'string' && val.startsWith('[')) {
               try {
                 const arr = JSON.parse(val.replace(/'/g, '"'));
@@ -515,10 +974,10 @@ const HMMDashboard = () => {
         return hasValidData;
       });
 
+
       optionCounts[value] = matchingRows.length;
     });
 
-    console.log(`Option counts for ${targetParamKey}:`, optionCounts);
 
     // Special debugging for B_entropy
     if (targetParamKey === 'B_entropy') {
@@ -648,6 +1107,30 @@ const HMMDashboard = () => {
     return (
       <div className="hmm-parameters">
         <h3>HMM Configuration</h3>
+
+        {/* File upload for trained models */}
+        {selectedTopic === 'trained_models' && (
+          <div className="file-upload-section">
+            <label className="parameter-label">UPLOAD TRAINED MODEL DATA</label>
+            <div className="file-upload-container">
+              <input
+                type="file"
+                accept=".csv"
+                onChange={handleFileUpload}
+                className="file-upload-input"
+                id="trained-model-upload"
+              />
+              <label htmlFor="trained-model-upload" className="file-upload-label">
+                📁 Choose CSV file
+              </label>
+              {uploadFileName && (
+                <div className="file-upload-status">
+                  ✅ Loaded: {uploadFileName}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
         <div className="parameter-grid">
           {hmmParamKeys.map(paramKey => {
             const optionCounts = getAvailableOptionsForParameter(paramKey);
@@ -803,6 +1286,7 @@ const HMMDashboard = () => {
               </div>
             </>
           )}
+
         </div>
       </div>
     );
@@ -810,6 +1294,9 @@ const HMMDashboard = () => {
 
   // Beautiful color theme with cold/warm tone separation
   const modelColors = {
+    // Trained transformer model - Special highlight color
+    'transformer_emission': '#dc2626', // Bright red for prominence
+
     // Qwen Models - Blue/Purple palette
     'llm_qwen_7b': '#1e40af',      // Deep blue (largest)
     'llm_qwen_3b': '#3b82f6',      // Blue
@@ -859,42 +1346,28 @@ const HMMDashboard = () => {
             <div key={groupName} className="model-group">
               <h5>{groupName}</h5>
               <div className="model-checkboxes">
-                {models.map(model => {
-                  let tooltip = '';
-                  if (model.key === 'viterbi') {
-                    tooltip = 'Theoretical optimum inference given ground truth HMM parameters';
-                  } else if (model.key === 'bw') {
-                    tooltip = 'EM algorithm for parameter estimation';
-                  }
-
-                  return (
-                    <div key={model.key} className="model-checkbox-container">
-                      <label className="model-checkbox">
-                        <input
-                          type="checkbox"
-                          checked={selectedModels.has(model.key)}
-                          onChange={(e) => {
-                            const newSelectedModels = new Set(selectedModels);
-                            if (e.target.checked) {
-                              newSelectedModels.add(model.key);
-                            } else {
-                              newSelectedModels.delete(model.key);
-                            }
-                            setSelectedModels(newSelectedModels);
-                          }}
-                        />
-                        <span style={{ color: modelColors[model.key] }}>
-                          {model.label}
-                        </span>
-                      </label>
-                      {tooltip && (
-                        <div className="model-tooltip">
-                          {tooltip}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
+                {models.map(model => (
+                  <label key={model.key} className="model-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={selectedModels.has(model.key)}
+                      onChange={(e) => {
+                        setShouldAnimate(false);
+                        const newSelectedModels = new Set(selectedModels);
+                        if (e.target.checked) {
+                          newSelectedModels.add(model.key);
+                        } else {
+                          newSelectedModels.delete(model.key);
+                        }
+                        setSelectedModels(newSelectedModels);
+                        setTimeout(() => setShouldAnimate(true), 100);
+                      }}
+                    />
+                    <span style={{ color: modelColors[model.key] }}>
+                      {model.label}
+                    </span>
+                  </label>
+                ))}
               </div>
             </div>
           ))}
@@ -999,19 +1472,18 @@ const HMMDashboard = () => {
 
   return (
     <div className="hmm-dashboard">
-      <header className="dashboard-header">
-        <h1>Evaluation on Hidden Markov Data</h1>
-        <p>Interactive synthetic experimental result in <a href="https://daiyijia02.github.io/icl-hmm-website/" target="_blank" rel="noopener noreferrer">this paper</a></p>
-      </header>
-
       <div className="topic-selector">
-        <h2>HMM Properties</h2>
+        <div className="topic-header">
+          <a href="https://daiyijia02.github.io/icl-hmm-website/" target="_blank" rel="noopener noreferrer" className="paper-link">
+            📄 Paper
+          </a>
+        </div>
         <div className="topic-buttons">
           {topics.map(topic => (
             <button
               key={topic.key}
               className={`topic-button ${selectedTopic === topic.key ? 'active' : ''}`}
-              onClick={() => setSelectedTopic(topic.key)}
+              onClick={() => handleTopicChange(topic.key)}
             >
               <div className="topic-title">{topic.label}</div>
             </button>
@@ -1057,25 +1529,36 @@ const HMMDashboard = () => {
 
           <div className="chart-with-models">
             <div className="chart-area">
+              <div className="chart-controls">
+                <button
+                  className="range-toggle-btn"
+                  onClick={toggleYAxisRange}
+                  title={isFixedRange ? "Switch to Dynamic Range" : "Switch to 0-1 Range"}
+                >
+                  🔍
+                </button>
+              </div>
               {visualizationData.length === 0 ? (
                 <div className="no-data">No data for current selection</div>
               ) : (
-                <ResponsiveContainer width="100%" height={600}>
+                <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={visualizationData} margin={{ top: 20, right: 30, left: 60, bottom: 100 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis
                     dataKey="sequenceLength"
                     type="number"
-                    label={{ value: 'Sequence Length', position: 'insideBottomLeft', offset: -10 }}
+                    label={{ value: 'Sequence Length', position: 'insideBottomRight', offset: -25, style: { fontSize: '16px' } }}
                     scale="log"
                     domain={[4, 2048]}
                     ticks={[4, 8, 16, 32, 64, 128, 256, 512, 1024, 2048]}
-                    tick={{ fontSize: 12 }}
+                    tick={{ fontSize: 14 }}
                     tickFormatter={(value) => value.toString()}
                   />
                   <YAxis
-                    label={{ value: metricTypes.find(m => m.key === selectedMetric)?.label, angle: -90, position: 'insideLeft' }}
-                    tick={{ fontSize: 12 }}
+                    label={{ value: metricTypes.find(m => m.key === selectedMetric)?.label, angle: -90, position: 'insideLeft', offset: -20, style: { fontSize: '16px', textAnchor: 'middle', dy: '20px' } }}
+                    tick={{ fontSize: 14 }}
+                    domain={yAxisDomain}
+                    tickFormatter={(value) => value.toFixed(2)}
                   />
                   <Tooltip
                     formatter={(value, name) => [
@@ -1091,7 +1574,7 @@ const HMMDashboard = () => {
                     }}
                   />
                   <Legend
-                    wrapperStyle={{ paddingTop: '20px' }}
+                    wrapperStyle={{ paddingTop: '30px', fontSize: '16px', lineHeight: '2.5' }}
                     formatter={(value, entry) => (
                       <span style={{ color: entry.color }}>
                         {modelColumns.find(col => col.key === value)?.label || value}
@@ -1115,6 +1598,8 @@ const HMMDashboard = () => {
                         dot={{ fill: strokeColor, strokeWidth: 0, r: 3 }}
                         activeDot={{ r: 5, fill: strokeColor }}
                         connectNulls={false}
+                        isAnimationActive={shouldAnimate}
+                        animationDuration={600}
                       />
                     );
                   })}
