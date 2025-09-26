@@ -1,12 +1,12 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import HMMDashboard from './components/HMMDashboard';
 import ExperimentalDashboard from './components/ExperimentalDashboard';
 import './App.css';
 
 function App() {
   return (
-    <Router basename="/hmm-visualization">
+    <Router>
       <div className="App">
         <Routes>
           <Route path="/" element={<HMMDashboard />} />
