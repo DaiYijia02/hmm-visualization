@@ -33,6 +33,13 @@ const HMMDashboard = ({ showExperimental = false }) => {
   const [availableParameters, setAvailableParameters] = useState({});
   const [selectedHMMParams, setSelectedHMMParams] = useState({});
   const [filteredData, setFilteredData] = useState([]);
+  const [selectedModels, setSelectedModels] = useState(new Set(['llm_qwen_7b', 'viterbi', 'bw', '2-gram']));
+  const [shouldAnimate, setShouldAnimate] = useState(true);
+  const [yAxisDomain, setYAxisDomain] = useState([0, 1]);
+  const [isFixedRange, setIsFixedRange] = useState(true);
+  const [uploadedModels, setUploadedModels] = useState({}); // { entropy: {name, data}, lambda2: {name, data}, steady_state: {name, data} }
+  const [uploadFileName, setUploadFileName] = useState(null);
+  const [selectedMetric, setSelectedMetric] = useState('acc');
 
   // Topic definitions
   const topics = [
@@ -118,7 +125,6 @@ const HMMDashboard = ({ showExperimental = false }) => {
 
   const metricTypes = getMetricTypes();
 
-  const [selectedMetric, setSelectedMetric] = useState('acc');
   // Function to get default selected models based on topic
   const getDefaultSelectedModels = (topic) => {
     const baseModels = new Set(['llm_qwen_7b', 'viterbi', 'bw', '2-gram']);
@@ -130,13 +136,6 @@ const HMMDashboard = ({ showExperimental = false }) => {
 
     return baseModels;
   };
-
-  const [selectedModels, setSelectedModels] = useState(getDefaultSelectedModels(selectedTopic));
-  const [shouldAnimate, setShouldAnimate] = useState(true);
-  const [yAxisDomain, setYAxisDomain] = useState([0, 1]);
-  const [isFixedRange, setIsFixedRange] = useState(true);
-  const [uploadedModels, setUploadedModels] = useState({}); // { entropy: {name, data}, lambda2: {name, data}, steady_state: {name, data} }
-  const [uploadFileName, setUploadFileName] = useState(null);
 
   // Handler for topic change
   const handleTopicChange = (topic) => {
@@ -202,84 +201,19 @@ const HMMDashboard = ({ showExperimental = false }) => {
   // Average transformer metrics across multiple runs
   const averageTransformerMetrics = (rows) => {
     if (rows.length === 1) {
-      // Even for single row, we need to flatten nested arrays
-      const processed = { ...rows[0] };
-      const metricKeys = ['transformer_emission_acc', 'transformer_emission_prob', 'transformer_emission_reverse_kl', 'transformer_emission_forward_kl', 'transformer_emission_hellinger_distance'];
-
-      metricKeys.forEach(metricKey => {
-        const val = processed[metricKey];
-        if (typeof val === 'string' && val.startsWith('[')) {
-          try {
-            const parsed = JSON.parse(val.replace(/'/g, '"'));
-            console.log(`Single row: Processing ${metricKey}:`, parsed);
-
-            // Handle nested arrays - if this is an array of arrays, flatten by averaging each position
-            if (Array.isArray(parsed) && parsed.length > 0 && Array.isArray(parsed[0])) {
-              console.log(`Single row: Found nested array for ${metricKey}, shape: ${parsed.length} x ${parsed[0].length}`);
-              const numSequences = parsed[0].length;
-              const flattenedArray = [];
-
-              for (let seqIdx = 0; seqIdx < numSequences; seqIdx++) {
-                const valuesAtPosition = parsed.map(run => run[seqIdx]).filter(v => !isNaN(v) && isFinite(v));
-                if (valuesAtPosition.length > 0) {
-                  flattenedArray[seqIdx] = valuesAtPosition.reduce((sum, v) => sum + v, 0) / valuesAtPosition.length;
-                } else {
-                  flattenedArray[seqIdx] = null;
-                }
-              }
-
-              processed[metricKey] = JSON.stringify(flattenedArray);
-              console.log(`Single row: Flattened ${metricKey} to:`, flattenedArray.slice(0, 3), '... (length: ' + flattenedArray.length + ')');
-            }
-          } catch (e) {
-            console.error(`Single row: Error parsing ${metricKey}:`, e);
-          }
-        }
-      });
-
-      return processed;
+      return rows[0];
     }
 
-    const averaged = { ...rows[0] }; // Start with first row
+    const averaged = { ...rows[0] };
     const metricKeys = ['transformer_emission_acc', 'transformer_emission_prob', 'transformer_emission_reverse_kl', 'transformer_emission_forward_kl', 'transformer_emission_hellinger_distance'];
 
     metricKeys.forEach(metricKey => {
-      console.log(`Processing ${metricKey} for ${rows.length} rows`);
-
       const arrays = rows.map(row => {
         const val = row[metricKey];
-        console.log(`Raw value for ${metricKey}:`, val);
-
         if (typeof val === 'string' && val.startsWith('[')) {
           try {
-            const parsed = JSON.parse(val.replace(/'/g, '"'));
-            console.log(`Parsed value for ${metricKey}:`, parsed);
-
-            // Handle nested arrays - if this is an array of arrays, flatten by averaging each position
-            if (Array.isArray(parsed) && parsed.length > 0 && Array.isArray(parsed[0])) {
-              console.log(`Found nested array for ${metricKey}, shape: ${parsed.length} x ${parsed[0].length}`);
-              // This is a 2D array (multiple runs, each with sequence length data)
-              // Average across runs for each sequence length position
-              const numSequences = parsed[0].length;
-              const flattenedArray = [];
-
-              for (let seqIdx = 0; seqIdx < numSequences; seqIdx++) {
-                const valuesAtPosition = parsed.map(run => run[seqIdx]).filter(v => !isNaN(v) && isFinite(v));
-                if (valuesAtPosition.length > 0) {
-                  flattenedArray[seqIdx] = valuesAtPosition.reduce((sum, v) => sum + v, 0) / valuesAtPosition.length;
-                } else {
-                  flattenedArray[seqIdx] = null;
-                }
-              }
-
-              console.log(`Flattened ${metricKey} from ${parsed.length} runs to single array:`, flattenedArray.slice(0, 3), '...');
-              return flattenedArray;
-            } else {
-              // Regular 1D array
-              return parsed;
-            }
+            return JSON.parse(val.replace(/'/g, '"'));
           } catch (e) {
-            console.error(`Error parsing ${metricKey}:`, e);
             return null;
           }
         }
@@ -287,7 +221,6 @@ const HMMDashboard = ({ showExperimental = false }) => {
       }).filter(arr => arr !== null);
 
       if (arrays.length > 0 && arrays[0].length > 0) {
-        // If we have multiple arrays (from multiple rows), average them
         if (arrays.length > 1) {
           const averagedArray = [];
           const arrayLength = arrays[0].length;
@@ -302,11 +235,8 @@ const HMMDashboard = ({ showExperimental = false }) => {
           }
 
           averaged[metricKey] = JSON.stringify(averagedArray);
-          console.log(`Final averaged ${metricKey} from ${arrays.length} arrays:`, averagedArray.slice(0, 3), '... (length: ' + averagedArray.length + ')');
         } else {
-          // Single array, just use it
           averaged[metricKey] = JSON.stringify(arrays[0]);
-          console.log(`Used single ${metricKey} array:`, arrays[0].slice(0, 3), '... (length: ' + arrays[0].length + ')');
         }
       }
     });
@@ -329,31 +259,15 @@ const HMMDashboard = ({ showExperimental = false }) => {
       const metricKeys = ['acc', 'prob', 'reverse_kl', 'forward_kl', 'hellinger_distance'];
       Object.keys(row).forEach(key => {
         metricKeys.forEach(metric => {
-          // If this column contains metric data and isn't already a baseline model column
-          if (key.includes(metric) && !key.startsWith('llm_') && !key.startsWith('viterbi') &&
-              !key.startsWith('bw') && !key.startsWith('p_o_') && !key.match(/^\d+-gram/)) {
+          // Check for columns ending with the metric name (e.g., transformer_emission_acc, custom_model_acc)
+          if (key.endsWith(`_${metric}`) &&
+              !key.startsWith('llm_') &&
+              !key.startsWith('viterbi') &&
+              !key.startsWith('bw') &&
+              !key.startsWith('p_o_') &&
+              !key.match(/^\d+-gram/)) {
 
-            // Check if the value is a nested array and flatten it
             let value = row[key];
-            if (typeof value === 'string' && value.startsWith('[[')) {
-              try {
-                const parsed = JSON.parse(value.replace(/'/g, '"'));
-                if (Array.isArray(parsed) && parsed.length > 0 && Array.isArray(parsed[0])) {
-                  // Flatten nested array by averaging
-                  const numSequences = parsed[0].length;
-                  const flattenedArray = [];
-                  for (let i = 0; i < numSequences; i++) {
-                    const valuesAtPosition = parsed.map(run => run[i]).filter(v => !isNaN(v) && isFinite(v));
-                    if (valuesAtPosition.length > 0) {
-                      flattenedArray[i] = valuesAtPosition.reduce((sum, v) => sum + v, 0) / valuesAtPosition.length;
-                    }
-                  }
-                  value = JSON.stringify(flattenedArray);
-                }
-              } catch (e) {
-                console.error('Error parsing nested array:', e);
-              }
-            }
 
             // Store as custom_model_[metric]
             processedRow[`custom_model_${metric}`] = value;
